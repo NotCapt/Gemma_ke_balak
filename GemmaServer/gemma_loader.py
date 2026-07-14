@@ -29,10 +29,10 @@ def get_model_and_processor():
     print("🔧 Using WORKING multimodal configuration...")
     
     model, tokenizer = FastModel.from_pretrained(
-        model_name="unsloth/gemma-4-E2B-it",
-        dtype=None,  # Auto detection (tutorial setting)
+        model_name="unsloth/gemma-2b-it",  # Changed to 2B for stability
+        dtype=None,  # Auto detection
         max_seq_length=2048,
-        load_in_4bit=True,  # Tutorial setting (works with multimodal)
+        load_in_4bit=True,
         full_finetuning=False,
         trust_remote_code=True,
         device_map="cuda",
