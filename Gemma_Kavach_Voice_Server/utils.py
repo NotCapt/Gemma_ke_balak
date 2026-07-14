@@ -22,7 +22,7 @@ def transcribe_audio_from_bytes(audio_bytes: bytes, prompt="Transcribe this audi
         # Try the main transcription endpoint first
         data = {"data": audio_base64, "prompt": "Transcribe this in Hindi"}
         
-        print(f"📤 Sending audio data ({len(audio_bytes)} bytes) to RunPod server...")
+        print(f"📤 Sending audio data ({len(audio_bytes)} bytes) to local Gemma server...")
         
         # Try multiple times with different configurations
         for attempt in range(3):
@@ -85,7 +85,7 @@ Output:"""
 
     data = {"prompt": prompt, "max_tokens": 10, "processing_mode": "force_off"}
     
-    response = requests.post(f"{SERVER_URL}/generate", json=data, timeout=90)
+    response = requests.post(f"{SERVER_URL}generate", json=data, timeout=90)
     
     if response.status_code == 200:
         zone = response.json()["text"].strip()

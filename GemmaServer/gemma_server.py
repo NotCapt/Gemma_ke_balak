@@ -36,8 +36,13 @@ class AudioPayload(BaseModel):
 app = FastAPI(title="Gemma 4 Server - MULTIMODAL WORKING!")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_origins=[
+        "http://localhost:38277", "http://127.0.0.1:38277",
+        "http://localhost:8501", "http://127.0.0.1:8501",
+        "http://localhost:7860", "http://127.0.0.1:7860"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -249,6 +254,7 @@ async def health_check():
         
         return {
             "status": "healthy",
+            "model_loaded": True,
             "text_generation": "✅ working",
             "text_test": text_response,
             "note": "Using unified RAW tokenizer approach"
@@ -256,6 +262,7 @@ async def health_check():
     except Exception as e:
         return {
             "status": "unhealthy", 
+            "model_loaded": False,
             "error": str(e)
         }
 

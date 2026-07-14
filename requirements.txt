@@ -19,9 +19,15 @@ pillow
 imageio
 
 # Cloud & Utilities
-google-cloud-storage
 python-dotenv
 aiohttp
 soundfile
-# ipykernel # for jupyter notebook
 google-cloud-texttospeech
+google-generativeai
+requests
+pandas
+
+# Fine-Tuning Pipeline
+datasets
+trl
+peft

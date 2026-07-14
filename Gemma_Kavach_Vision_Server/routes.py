@@ -1,31 +1,36 @@
-# routes.py - Improved API endpoints with dual crowd analysis
+# routes.py - API endpoints with dual crowd analysis, reasoning output, and audit trail
 from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import aiohttp
 import asyncio
 from utils import (
-    save_session_to_gcs, 
-    load_session_from_gcs,
-    save_flagged_image_to_gcs,
+    save_session, 
+    load_session,
+    save_flagged_image,
     should_send_alert,
     send_alert_email,
     generate_session_id, 
     get_current_timestamp,
     get_verdict,
-    check_gcs_connection,
+    check_db_connection,
     calculate_risk_score,
-    BUCKET_NAME,
-    SESSIONS_PREFIX
 )
 from reasoning_engine import generate_vision_reasoning
-from audit_logger import log_frame_analysis, log_audit_trail
+from audit_logger import (
+    log_frame_analysis,
+    log_alert,
+    log_audit_trail,
+    get_full_audit_trail,
+    get_alerts,
+)
 
 # Create router
 router = APIRouter()
 
-# Gemma server configuration
+# Gemma server configuration — LOCAL inference, no cloud dependency
 GEMMA_API_URL = "http://localhost:8000/ask_image"
+
 # Improved analysis prompts
 CROWD_DENSITY_PROMPT = (
     "Analyze this image and determine the crowd density level. "
@@ -60,6 +65,7 @@ class FrameAnalysisResponse(BaseModel):
     frames_flagged: int
     timestamp: str
     analysis_details: Dict[str, Any]
+    reasoning: Optional[Dict[str, Any]] = None  # Populated on flagged frames
 
 class CreateSessionRequest(BaseModel):
     location: str = "Mela Zone B"
@@ -174,9 +180,19 @@ async def create_session(request: CreateSessionRequest):
             }
         }
         
-        success = save_session_to_gcs(session_id, session_data)
+        success = save_session(session_id, session_data)
         if not success:
-            raise Exception("Failed to save session to cloud storage")
+            raise Exception("Failed to save session to database")
+        
+        # Log session creation to audit trail
+        log_audit_trail(
+            session_id=session_id,
+            event_type="session_created",
+            severity="INFO",
+            reasoning=f"New monitoring session created for {request.location}",
+            action_taken="Session initialized",
+            metadata={"location": request.location, "operator": request.operator_name}
+        )
         
         print(f"✅ Created session: {session_id}")
         print(f"📍 Location: {request.location}")
@@ -197,11 +213,12 @@ async def create_session(request: CreateSessionRequest):
 @router.post("/session/{session_id}/frame", response_model=FrameAnalysisResponse)
 async def analyze_frame(session_id: str, background_tasks: BackgroundTasks, frame: UploadFile = File(...)):
     """
-    Analyze a single frame using dual crowd analysis (density + motion)
+    Analyze a single frame using dual crowd analysis (density + motion).
+    Returns reasoning and evidence for flagged frames.
     """
     try:
         # Load existing session
-        session_data = load_session_from_gcs(session_id)
+        session_data = load_session(session_id)
         if not session_data:
             raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
         
@@ -237,23 +254,50 @@ async def analyze_frame(session_id: str, background_tasks: BackgroundTasks, fram
         breakdown["risk_levels"][risk_level] += 1
         session_data["analysis_breakdown"] = breakdown
         
+        # Reasoning data — populated only for flagged frames
+        reasoning_data = None
+        image_path = None
+        
         # Handle flagged frames
         if risk_detected:
             session_data["frames_flagged"] += 1
             
             # Save flagged image locally
-            image_gcs_path = save_flagged_image_to_gcs(session_id, frame_number, image_content)
+            image_path = save_flagged_image(session_id, frame_number, image_content)
             
             # Generate reasoning for this risk
             reasoning = await generate_vision_reasoning(density, motion, risk_level)
             
+            # Build structured reasoning response
+            reasoning_data = {
+                "risk_level": risk_level,
+                "reasoning": reasoning.get("reasoning", f"Risk detected: {density} density with {motion} motion."),
+                "action": reasoning.get("action", "Monitor and investigate."),
+                "evidence": {
+                    "density": density,
+                    "motion": motion,
+                    "frame_number": frame_number,
+                    "analysis_time_seconds": analysis_time,
+                },
+                "timestamp": get_current_timestamp(),
+            }
+            
+            # Log alert to the alerts table
+            log_alert(
+                session_id=session_id,
+                risk_level=risk_level,
+                reasoning=reasoning_data["reasoning"],
+                evidence=reasoning_data["evidence"],
+                frame_refs=str(frame_number),
+            )
+            
             # Log audit trail for this flagged frame
             log_audit_trail(
                 session_id=session_id,
-                event_type="Risk_Detected",
+                event_type="vision_alert",
                 severity=risk_level,
-                reasoning=reasoning.get("reasoning", "No reasoning provided."),
-                action_taken=reasoning.get("action", "Monitor"),
+                reasoning=reasoning_data["reasoning"],
+                action_taken=reasoning_data["action"],
                 metadata={"frame_number": frame_number, "density": density, "motion": motion}
             )
             
@@ -263,17 +307,17 @@ async def analyze_frame(session_id: str, background_tasks: BackgroundTasks, fram
                 
             session_data["flagged_frames"].append({
                 "frame_number": frame_number,
-                "local_path": image_gcs_path,
+                "local_path": image_path,
                 "timestamp": get_current_timestamp(),
                 "crowd_density": density,
                 "crowd_motion": motion,
                 "risk_level": risk_level,
                 "analysis_time_seconds": analysis_time,
-                "reasoning": reasoning
+                "reasoning": reasoning_data
             })
             
         # Log frame analysis to SQLite
-        log_frame_analysis(session_id, frame_number, density, motion, risk_level, risk_detected, image_gcs_path if risk_detected else None)
+        log_frame_analysis(session_id, frame_number, density, motion, risk_level, risk_detected, image_path)
         
         # Calculate enhanced risk score
         risk_score = calculate_risk_score(session_data)
@@ -281,7 +325,7 @@ async def analyze_frame(session_id: str, background_tasks: BackgroundTasks, fram
         session_data["last_analysis"] = get_current_timestamp()
         
         # Save updated session
-        save_success = save_session_to_gcs(session_id, session_data)
+        save_success = save_session(session_id, session_data)
         if not save_success:
             print("⚠️ Failed to save session update")
         
@@ -289,7 +333,7 @@ async def analyze_frame(session_id: str, background_tasks: BackgroundTasks, fram
         if should_send_alert(session_data):
             print(f"🚨 Alert criteria met! Sending email in background...")
             session_data["email_sent"] = True
-            save_session_to_gcs(session_id, session_data)
+            save_session(session_id, session_data)
             background_tasks.add_task(send_alert_email, session_id, session_data)
         
         # Log analysis results
@@ -314,7 +358,8 @@ async def analyze_frame(session_id: str, background_tasks: BackgroundTasks, fram
                 "density_breakdown": breakdown["density_stats"],
                 "motion_breakdown": breakdown["motion_stats"],
                 "risk_level_breakdown": breakdown["risk_levels"]
-            }
+            },
+            reasoning=reasoning_data,
         )
         
     except HTTPException:
@@ -327,7 +372,7 @@ async def analyze_frame(session_id: str, background_tasks: BackgroundTasks, fram
 async def get_session_status(session_id: str):
     """Get current status and detailed analytics of a monitoring session"""
     try:
-        session_data = load_session_from_gcs(session_id)
+        session_data = load_session(session_id)
         if not session_data:
             raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
         
@@ -356,17 +401,60 @@ async def get_session_status(session_id: str):
         print(f"❌ Error getting session status: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get session status: {str(e)}")
 
+
+# ---------------------------------------------------------------------------
+# Audit trail API — read-only endpoints for forensic review
+# ---------------------------------------------------------------------------
+
+@router.get("/audit/{session_id}")
+async def get_session_audit_trail(session_id: str, limit: int = 100):
+    """Get the full audit trail for a specific session (read-only, forensic-grade)"""
+    trail = get_full_audit_trail(session_id=session_id, limit=limit)
+    alerts_list = get_alerts(session_id=session_id, limit=limit)
+    return {
+        "session_id": session_id,
+        "audit_trail": trail,
+        "alerts": alerts_list,
+        "total_entries": len(trail),
+        "total_alerts": len(alerts_list),
+    }
+
+@router.get("/audit")
+async def get_recent_audit_trail(limit: int = 50):
+    """Get recent audit trail entries across all sessions (read-only)"""
+    trail = get_full_audit_trail(limit=limit)
+    alerts_list = get_alerts(limit=limit)
+    return {
+        "audit_trail": trail,
+        "alerts": alerts_list,
+        "total_entries": len(trail),
+        "total_alerts": len(alerts_list),
+    }
+
+
 @router.get("/monitoring/status")
 async def monitoring_status():
     """Check if monitoring service is available"""
-    gcs_info = check_gcs_connection()
+    db_info = check_db_connection()
     
     return {
         "service": "monitoring",
         "status": "available",
         "analysis_type": "dual_crowd_analysis",
-        "features": ["crowd_density_detection", "panic_behavior_detection", "async_api_calls"],
-        "gcs": gcs_info,
+        "features": [
+            "crowd_density_detection",
+            "panic_behavior_detection",
+            "async_api_calls",
+            "reasoning_per_alert",
+            "audit_trail",
+        ],
+        "database": db_info,
         "gemma_api": GEMMA_API_URL,
-        "endpoints": ["/session/create", "/session/{id}/frame", "/session/{id}"]
+        "endpoints": [
+            "/session/create",
+            "/session/{id}/frame",
+            "/session/{id}",
+            "/audit/{session_id}",
+            "/audit",
+        ]
     }

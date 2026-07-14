@@ -35,6 +35,7 @@ def get_model_and_processor():
         load_in_4bit=True,  # Tutorial setting (works with multimodal)
         full_finetuning=False,
         trust_remote_code=True,
+        device_map="cuda",
     )
     
     # Optional LoRA adapter loading

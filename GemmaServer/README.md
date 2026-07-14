@@ -1,18 +1,28 @@
-# Gemma 3n Server
+# GemmaServer (Central Inference Hub)
 
-A FastAPI-based backend server that provides multimodal AI capabilities using Google's Gemma 3n model. This server supports text generation, image analysis, and audio processing through RESTful API endpoints.
+The `GemmaServer` is the **core inference engine** for the entire Gemma Kavach v2 architecture. It runs the fine-tuned Gemma 4 multimodal model (E2B-it) locally on a single machine, providing inference APIs to all three downstream client services (Vision, Voice, and Chat).
 
-## Features
+By centralizing inference, we achieve:
+1. **On-Device Privacy:** No data (images, voice, text) is ever sent to the cloud.
+2. **Resource Efficiency:** We only need to load the 2B model into GPU/RAM once.
+3. **Zero Latency/Network Hops:** Services communicate via `localhost:8000`.
 
-- **Text Generation**: Generate text responses from text prompts
-- **Image Analysis**: Analyze images with text prompts for visual question answering
-- **Audio Processing**: Process audio files and generate text responses
-- **CORS Support**: Cross-origin resource sharing enabled for web applications
-- **Multimodal Support**: Handles text, image, and audio inputs seamlessly
+## Endpoints Provided
 
-## Prerequisites
+- `POST /ask_image`: Multimodal vision reasoning (used by Vision Server).
+- `POST /classify`: Text classification with reasoning (used by Chat Server).
+- `POST /ask`: Audio transcription and general query (used by Voice Server).
+- `POST /generate`: Basic text generation (used by Voice Server for natural Hindi responses).
 
-- Python 3.8+
-- CUDA-compatible GPU (This project used RTX 4090)
-- HuggingFace account and access token
+## Security
 
+- **CORS Hardened**: Restricted strictly to localhost to prevent unauthorized external access.
+
+## Running the Server
+
+```bash
+cd GemmaServer
+pip install -r requirements.txt
+python gemma_server.py
+```
+*Note: Make sure this server is running on port 8000 before starting any of the client services.*

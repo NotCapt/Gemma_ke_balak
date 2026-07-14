@@ -33,7 +33,11 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:38277", "http://127.0.0.1:38277",
+        "http://localhost:8501", "http://127.0.0.1:8501",
+        "http://localhost:7860", "http://127.0.0.1:7860"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -117,21 +121,29 @@ async def api_info():
 
 @app.get("/health")
 async def health_check():
-    from utils import model
+    import requests
+    try:
+        # Check central Gemma Server status
+        response = requests.get("http://localhost:8000/health", timeout=5)
+        central_health = response.json()
+        model_loaded = central_health.get("model_loaded", False)
+    except:
+        model_loaded = False
+        
     return {
         "status": "healthy", 
-        "model_loaded": model is not None,
+        "model_loaded": model_loaded,
         "service": "emergency-classification",
-        "version": "1.0.0"
+        "version": "2.0.0"
     }
 
 if __name__ == "__main__":
     print("🔥 Gemma Kavach Emergency Classification System")
     print("=" * 50)
-    print("🧠 AI Model: Gemma 3N 2B + LoRA Fine-tuning")
+    print("🧠 AI Model: Gemma 4 E2B + LoRA Fine-tuning")
     print("📱 Web Interface: Cyberpunk Emergency Report Form") 
     print("📧 Email Alerts: Automatic emergency notifications")
-    print("☁️ Cloud Storage: GCS image backup")
+    print("💾 Local Storage: SQLite Audit DB & Image Backup")
     print("=" * 50)
     
     uvicorn.run(
