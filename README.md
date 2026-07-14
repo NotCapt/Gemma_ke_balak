@@ -3,7 +3,7 @@
 <div align="center">
   <img src="images/logo.PNG" alt="Gemma Kavach Logo" width="300"/>
   
-  **An intelligent crowd safety monitoring and emergency response system powered by Google's Gemma AI**
+  **An intelligent crowd safety monitoring and emergency response system powered by Google's Gemma AI (v2 Architecture)**
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -25,9 +25,9 @@ Gemma Kavach is a comprehensive AI-powered crowd safety suite designed for real-
 
 ### 🎥 **Vision Server** - Real-time Crowd Monitoring
 - **Dual Analysis Engine**: Simultaneous crowd density and motion behavior detection
-- **Risk Assessment**: AI-powered risk scoring with automated alert system
+- **Reasoning Engine**: Generates structured AI reasoning for detected risks
 - **Live Dashboard**: Real-time analytics with visual indicators
-- **Cloud Storage**: Google Cloud Storage integration for data persistence
+- **SQLite Audit Trail**: Robust local database logging inspired by safetychain for forensic auditing
 
 ### 🎤 **Voice Server** - Hands-free Command Interface
 - **Hindi-English Voice Commands**: Natural language processing for Indian contexts
@@ -101,8 +101,9 @@ BUCKET_NAME=your-gcs-bucket
 
 ### 4. Start Services
 
-#### Core Gemma Server (Port 8000)
+#### Core Gemma Server (Local Inference - Port 8000)
 ```bash
+# This loads the local Gemma-4-E2B-it model using Unsloth
 cd GemmaServer
 python gemma_server.py
 ```
@@ -534,11 +535,12 @@ Glenn Cameron, Omar Sanseviero, Gus Martins, Ian Ballantyne, Kat Black, Mark She
 - [ ] Distributed deployment support
 
 ### Version History
+- **v2.0.0**: 
+  - Upgraded to Local Inference Architecture (removed RunPod dependency)
+  - Integrated structured reasoning capabilities (`/classify`)
+  - Switched from GCS to local SQLite for forensic audit logging
+  - Enhanced Vision and Chat servers with direct reasoning pass-through
 - **v1.0.0**: Initial release with core functionality
-- Enhanced AI model fine-tuning
-- Comprehensive web interfaces
-- Multi-modal processing capabilities
-- Production-ready deployment
 
 ---
 
