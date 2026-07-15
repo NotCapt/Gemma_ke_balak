@@ -74,6 +74,7 @@ cd VadCLIP
 python main.py
 ```
 This script will initialize the multi-stage pipeline, including the VAD, Gemma Multimodal Engine, YOLOv8n, and OSNet Re-ID embeddings. Once the backend boots up, it will automatically launch the **Frontend Dashboard** in your default web browser (running locally on port 8080).
+You can also access the **Police Dispatch Dashboard** by navigating to `http://localhost:8080/police/` in your browser.
 
 ---
 
@@ -115,6 +116,11 @@ This script will initialize the multi-stage pipeline, including the VAD, Gemma M
 - **Severity score:** VAD score × Gemma confidence.
 - **Explainability panel:** Live display of Gemma's reasoning text.
 - **Comparison mode:** Side-by-side "VAD-only" vs "full pipeline" to visually demonstrate the reduction in alarm fatigue.
+
+### Stage 8 — Police Dispatch Dashboard
+- **Access:** Available via the `/police/` endpoint.
+- **Forensic Intel:** Displays real-time threat severity, location/sector, camera feeds, VAD score, and Gemma confidence.
+- **Department Routing:** Automatically highlights the intended department (e.g., Police, Fire Dept, Hospital) based on Gemma's structured JSON analysis.
 
 ---
 

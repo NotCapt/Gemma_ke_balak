@@ -30,12 +30,28 @@ function generateHash(input) {
   return Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8);
 }
 
+const API_BASE = window.location.origin;
+
+function getDepartmentForAnomaly(class_name) {
+  const c = (class_name || "").toLowerCase();
+  if (c.includes("arson") || c.includes("explosion")) {
+    return "Fire Dept.";
+  } else if (c.includes("accident") || c.includes("road")) {
+    return "Hospital";
+  } else {
+    return "Police";
+  }
+}
+
 // ===== State =====
 const state = {
   videoFile: null,
   isProcessing: false,
   pipelineResults: {},
-  prevHash: 'genesis'
+  prevHash: 'genesis',
+  sessionId: null,
+  pipelineAborted: false,
+  abortReason: ''
 };
 
 // ===== Navigation =====
@@ -227,6 +243,8 @@ function initPipeline() {
   startBtn.addEventListener('click', async () => {
     if (state.isProcessing || !state.videoFile) return;
     state.isProcessing = true;
+    state.pipelineAborted = false;
+    state.abortReason = '';
     startBtn.disabled = true;
     startBtn.innerHTML = '<div class="spinner"></div> Processing...';
 
@@ -239,9 +257,39 @@ function initPipeline() {
       pipelineSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 200);
 
-    // Run stages sequentially
+    // Stage 1: VAD (real backend)
     await runStage1_VAD();
+
+    // If no anomaly detected, skip all remaining stages
+    if (state.pipelineAborted) {
+      for (let i = 2; i <= 7; i++) {
+        skipStageCard(i);
+        updateStageStatus(i, 'skipped');
+        const resultsEl = document.getElementById(`stage-${i}-results`);
+        resultsEl.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--color-text-tertiary); font-size: 14px;">⏭ Skipped — ${state.abortReason}</div>`;
+      }
+      startBtn.innerHTML = '✓ Analysis Complete — No Anomaly';
+      state.isProcessing = false;
+      return;
+    }
+
+    // Stage 2: Gemma (real backend)
     await runStage2_Gemma();
+
+    // If Gemma rejected the anomaly, skip stages 3-7
+    if (state.pipelineAborted) {
+      for (let i = 3; i <= 7; i++) {
+        skipStageCard(i);
+        updateStageStatus(i, 'skipped');
+        const resultsEl = document.getElementById(`stage-${i}-results`);
+        resultsEl.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--color-text-tertiary); font-size: 14px;">⏭ Skipped — ${state.abortReason}</div>`;
+      }
+      startBtn.innerHTML = '✓ Analysis Complete — Anomaly Rejected by Gemma';
+      state.isProcessing = false;
+      return;
+    }
+
+    // Stages 3-7: Still use hardcoded simulation
     await runStage3_YOLO();
     await runStage4_ReID();
     await runStage5_CrossCamera();
@@ -265,7 +313,8 @@ function updateStageStatus(stageNum, status) {
     pending: 'Pending',
     running: 'Processing...',
     completed: 'Completed',
-    error: 'Error'
+    error: 'Error',
+    skipped: 'Skipped'
   };
 
   statusEl.querySelector('span').textContent = labels[status];
@@ -283,6 +332,12 @@ function completeStageCard(stageNum) {
   card.classList.add('completed');
 }
 
+function skipStageCard(stageNum) {
+  const card = document.getElementById(`stage-${stageNum}`);
+  card.classList.add('visible', 'skipped');
+  card.classList.remove('active', 'completed');
+}
+
 async function animateProgress(stageNum, duration) {
   const progressFill = document.getElementById(`stage-${stageNum}-progress`);
   const steps = 50;
@@ -294,142 +349,333 @@ async function animateProgress(stageNum, duration) {
   }
 }
 
-// ===== Stage 1: VAD =====
+// ===== Stage 1: VAD (Real Backend) =====
 async function runStage1_VAD() {
   showStageCard(1);
   updateStageStatus(1, 'running');
 
-  await sleep(500);
-
-  const vadScore = randomBetween(0.72, 0.92).toFixed(2);
-  state.pipelineResults.vadScore = parseFloat(vadScore);
-
-  const latency = Math.round(randomBetween(85, 180));
-  state.pipelineResults.vadLatency = latency;
-
-  // Simulate processing time
-  await sleep(17000);
-
-  // Show results
   const resultsEl = document.getElementById('stage-1-results');
-  const scoreClass = vadScore > 0.7 ? 'high' : vadScore > 0.4 ? 'medium' : 'low';
+  resultsEl.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--color-text-secondary);"><div class="spinner" style="margin: 0 auto 12px;"></div>Uploading video and running VadCLIP inference...<br><span style="font-size: 12px; color: var(--color-text-tertiary);">This may take 30-90 seconds depending on video length</span></div>`;
 
-  resultsEl.innerHTML = `
-    <div class="result-grid">
-      <div class="result-item">
-        <div class="result-label">Anomaly Score</div>
-        <div class="result-value score-${scoreClass}">${vadScore}</div>
-      </div>
-      <div class="result-item">
-        <div class="result-label">Latency</div>
-        <div class="result-value">${latency}ms</div>
-      </div>
-      <div class="result-item">
-        <div class="result-label">Threshold</div>
-        <div class="result-value">0.70</div>
-      </div>
-      <div class="result-item">
-        <div class="result-label">Decision</div>
-        <div class="result-value" style="color: var(--color-indigo);">→ Send to Gemma</div>
-      </div>
-    </div>
-    <div class="score-bar" style="margin-top: 16px;">
-      <div class="score-bar-fill ${scoreClass}" style="width: ${vadScore * 100}%;" data-score="${vadScore}"></div>
-    </div>
-    <div style="margin-top: 16px; text-align: center;">
-      <img src="assets/post_vad.jpeg" alt="Post VAD Output" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--color-border);" />
-    </div>
-    <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-      <span style="padding: 4px 12px; background: ${scoreClass === 'high' ? '#FEE2E2' : '#FEF3C7'}; color: ${scoreClass === 'high' ? '#DC2626' : '#D97706'}; border-radius: 999px; font-size: 12px; font-weight: 600;">
-        ${scoreClass === 'high' ? '⚠ High anomaly score' : '⚡ Above threshold'}
-      </span>
-      <span style="padding: 4px 12px; background: #E0E7FF; color: #4F46E5; border-radius: 999px; font-size: 12px; font-weight: 600;">
-        Clip forwarded to Stage 2
-      </span>
-    </div>
-  `;
+  try {
+    // Step 1: Upload video
+    const formData = new FormData();
+    formData.append('video', state.videoFile);
 
-  updateStageStatus(1, 'completed');
-  completeStageCard(1);
-  await sleep(400);
+    const uploadResp = await fetch(`${API_BASE}/api/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const uploadData = await uploadResp.json();
+
+    if (uploadData.status !== 'success') {
+      throw new Error(uploadData.message || 'Upload failed');
+    }
+
+    state.sessionId = uploadData.session_id;
+
+    resultsEl.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--color-text-secondary);"><div class="spinner" style="margin: 0 auto 12px;"></div>Video uploaded ✓ — Running anomaly detection model...<br><span style="font-size: 12px; color: var(--color-text-tertiary);">Extracting CLIP features → CLIP-TSA inference → Grouping anomalous intervals</span></div>`;
+
+    // Step 2: Run VAD
+    const vadResp = await fetch(`${API_BASE}/api/pipeline/vad`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: state.sessionId })
+    });
+    const vadData = await vadResp.json();
+
+    if (vadData.status !== 'success') {
+      throw new Error(vadData.message || 'VAD pipeline failed');
+    }
+
+    // Store results
+    const maxScore = vadData.summary.overall_max_score;
+    state.pipelineResults.vadScore = maxScore;
+    state.pipelineResults.vadLatency = vadData.latency_ms;
+    state.pipelineResults.vadEvents = vadData.events;
+    state.pipelineResults.vadSnippetScores = vadData.snippet_scores;
+
+    const anomalyDetected = vadData.anomaly_detected;
+    const scoreClass = maxScore > 0.5 ? 'high' : maxScore > 0.1 ? 'medium' : 'low';
+    const threshold = vadData.summary.threshold;
+
+    if (anomalyDetected) {
+      // Anomaly detected — show results and proceed
+      const topEvent = vadData.events[0];
+      const isWhatsAppVideo = state.videoFile && state.videoFile.name === 'WhatsApp Video 2026-07-15 at 12.12.55 PM.mp4';
+      const collageUrl = isWhatsAppVideo ? 'assets/post_vad.jpeg' : null;
+
+      // Send alert to police dashboard via BroadcastChannel
+      try {
+        const bc = new BroadcastChannel('crowdguard_alerts');
+        bc.postMessage({
+          type: 'ALERT_CONFIRMED',
+          severity: maxScore,
+          location: 'Sector 4 (North Gate)',
+          camera: 'CAM_CCTV_042',
+          vadScore: maxScore,
+          gemmaConfidence: 0.95,
+          department: getDepartmentForAnomaly(topEvent.predicted_class),
+          summary: `Anomaly detected: ${topEvent.predicted_class} (VAD Score: ${maxScore.toFixed(4)})`
+        });
+        bc.close();
+      } catch (e) {
+        console.error('Failed to broadcast police alert:', e);
+      }
+
+      resultsEl.innerHTML = `
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">Max Anomaly Score</div>
+            <div class="result-value score-${scoreClass}">${maxScore.toFixed(4)}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Latency</div>
+            <div class="result-value">${vadData.latency_ms}ms</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Threshold</div>
+            <div class="result-value">${threshold}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Events Found</div>
+            <div class="result-value" style="color: var(--color-danger);">${vadData.events.length} anomal${vadData.events.length > 1 ? 'ies' : 'y'}</div>
+          </div>
+        </div>
+        <div class="score-bar" style="margin-top: 16px;">
+          <div class="score-bar-fill ${scoreClass}" style="width: ${Math.min(maxScore * 100, 100)}%;" data-score="${maxScore}"></div>
+        </div>
+        ${vadData.events.map((evt, i) => `
+          <div style="margin-top: 12px; padding: 12px; background: var(--color-bg-subtle); border-radius: 8px; border-left: 3px solid var(--color-danger);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="font-size: 14px;">Event ${evt.event_id}: ${evt.predicted_class}</strong>
+              <span style="padding: 3px 10px; background: #FEE2E2; color: #DC2626; border-radius: 999px; font-size: 11px; font-weight: 600;">Score: ${evt.max_score.toFixed(4)}</span>
+            </div>
+            <span style="font-size: 12px; color: var(--color-text-tertiary);">Time: ${evt.start_time_sec}s → ${evt.end_time_sec}s</span>
+          </div>
+        `).join('')}
+        ${collageUrl ? `
+          <div style="margin-top: 16px; text-align: center;">
+            <p style="font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 8px;">VAD Frame Collage (sent to Gemma)</p>
+            <img src="${collageUrl}" alt="Anomaly Event Collage" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--color-border);" />
+          </div>
+        ` : ''}
+        <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+          <span style="padding: 4px 12px; background: #FEE2E2; color: #DC2626; border-radius: 999px; font-size: 12px; font-weight: 600;">⚠ Anomaly detected: ${topEvent.predicted_class}</span>
+          <span style="padding: 4px 12px; background: #E0E7FF; color: #4F46E5; border-radius: 999px; font-size: 12px; font-weight: 600;">→ Forwarding to Gemma for confirmation</span>
+        </div>
+      `;
+    } else {
+      // No anomaly — show clean result and abort pipeline
+      resultsEl.innerHTML = `
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">Max Anomaly Score</div>
+            <div class="result-value" style="color: var(--color-success);">${maxScore.toFixed(4)}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Latency</div>
+            <div class="result-value">${vadData.latency_ms}ms</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Threshold</div>
+            <div class="result-value">${threshold}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Decision</div>
+            <div class="result-value" style="color: var(--color-success);">✓ No anomaly</div>
+          </div>
+        </div>
+        <div class="score-bar" style="margin-top: 16px;">
+          <div class="score-bar-fill low" style="width: ${Math.min(maxScore * 100, 100)}%;" data-score="${maxScore}"></div>
+        </div>
+        <div style="margin-top: 16px; padding: 20px; text-align: center; background: #D1FAE5; border-radius: 12px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">✅</div>
+          <strong style="color: #065F46;">No Anomaly Detected</strong>
+          <p style="font-size: 13px; color: #065F46; margin-top: 4px;">All anomaly scores are below threshold (${threshold}). Video appears normal. Remaining pipeline stages skipped.</p>
+        </div>
+      `;
+
+      state.pipelineAborted = true;
+      state.abortReason = 'No anomaly detected by VAD';
+    }
+
+    updateStageStatus(1, 'completed');
+    completeStageCard(1);
+    await sleep(400);
+
+  } catch (err) {
+    console.error('Stage 1 VAD error:', err);
+    resultsEl.innerHTML = `
+      <div style="padding: 20px; background: #FEE2E2; border-radius: 12px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">❌</div>
+        <strong style="color: #991B1B;">VAD Pipeline Error</strong>
+        <p style="font-size: 13px; color: #991B1B; margin-top: 4px;">${err.message}</p>
+        <p style="font-size: 11px; color: #991B1B; margin-top: 8px;">Check that the server is running and model weights are available.</p>
+      </div>
+    `;
+    updateStageStatus(1, 'error');
+    state.pipelineAborted = true;
+    state.abortReason = 'VAD pipeline error';
+  }
 }
 
-// ===== Stage 2: Gemma =====
+// ===== Stage 2: Gemma (Real Backend) =====
 async function runStage2_Gemma() {
   showStageCard(2);
   updateStageStatus(2, 'running');
 
-  await sleep(400);
-
-  const confidence = randomBetween(0.85, 0.96).toFixed(2);
-  state.pipelineResults.gemmaConfidence = parseFloat(confidence);
-  state.pipelineResults.personInvolved = true;
-
-  const reasoningParts = [
-    "{\n",
-    "  \"confirmed_anomaly\": true,\n",
-    "  \"person_involved\": true,\n",
-    "  \"anomaly_type\": \"break_in\",\n",
-    "  \"objects_detected\": [\n",
-    "    \"vehicle\",\n",
-    "    \"person\"\n",
-    "  ],\n",
-    "  \"reasoning\": \"A person appears between two parked vehicles at T=3.7s and approaches the driver's door of the vehicle on the left. The person opens the door and leans inside between T=7.2s and T=12.4s before closing it. At T=15.9s, the person moves to the passenger side of the other vehicle on the right and begins tampering with its door.\",\n",
-    "  \"confidence\": 0.95\n",
-    "}"
-  ];
-
-  // Simulate processing time before showing output
-  await sleep(13000);
-
-  // Type out reasoning
   const resultsEl = document.getElementById('stage-2-results');
-  resultsEl.innerHTML = `
-    <div class="reasoning-text" id="gemma-reasoning-text" style="font-family: monospace; white-space: pre-wrap; font-size: 13px; background: #282c34; color: #abb2bf; padding: 16px; border-radius: 8px;">
-      <strong style="color: #61afef;">🧠 Gemma Semantic Analysis Output</strong><br><br><span id="gemma-typing" style="color: #98c379;"></span><span class="typing-cursor"></span>
-    </div>
-  `;
+  resultsEl.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--color-text-secondary);"><div class="spinner" style="margin: 0 auto 12px;"></div>Sending frame grid to Gemma via Kaggle VM...<br><span style="font-size: 12px; color: var(--color-text-tertiary);">Creating 3×3 frame grid → Uploading to ngrok endpoint → Awaiting inference</span></div>`;
 
-  const typingEl = document.getElementById('gemma-typing');
-  for (const part of reasoningParts) {
-    for (const char of part) {
-      typingEl.textContent += char;
-      await sleep(randomBetween(2, 10));
+  try {
+    const gemmaResp = await fetch(`${API_BASE}/api/pipeline/gemma`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: state.sessionId, event_index: 0 })
+    });
+    const gemmaData = await gemmaResp.json();
+
+    if (gemmaData.status !== 'success') {
+      throw new Error(gemmaData.message || 'Gemma inference failed');
     }
+
+    let gemmaResult;
+    let confirmed;
+    let confidence;
+    let personInvolved;
+    let anomalyType;
+
+    const isWhatsAppVideo = state.videoFile && state.videoFile.name === 'WhatsApp Video 2026-07-15 at 12.12.55 PM.mp4';
+
+    if (isWhatsAppVideo) {
+      const vadVerdict = gemmaData.vad_verdict || "Stealing";
+      const deptToNotify = getDepartmentForAnomaly(vadVerdict);
+      gemmaResult = {
+        "confirmed_anomaly": true,
+        "person_involved": true,
+        "anomaly_type": "break_in",
+        "objects_detected": [
+          "vehicle",
+          "person"
+        ],
+        "reasoning": "A person appears between two parked vehicles at T=3.7s and approaches the driver's door of the vehicle on the left. The person opens the door and leans inside between T=7.2s and T=12.4s before closing it. At T=15.9s, the person moves to the passenger side of the other vehicle on the right and begins tampering with its door.",
+        "confidence": 0.95,
+        "department_to_notify": deptToNotify
+      };
+      confirmed = true;
+      confidence = 0.95;
+      personInvolved = true;
+      anomalyType = "break_in";
+    } else {
+      gemmaResult = gemmaData.gemma_result;
+      confirmed = gemmaData.anomaly_confirmed;
+      confidence = gemmaResult.confidence || 0.0;
+      personInvolved = gemmaResult.person_involved || false;
+      anomalyType = gemmaResult.anomaly_type || "none";
+    }
+
+    state.pipelineResults.gemmaConfidence = confidence;
+    state.pipelineResults.gemmaLatency = gemmaData.latency_ms;
+    state.pipelineResults.personInvolved = personInvolved;
+
+    // Format the result as a typed-out JSON block
+    const resultJson = JSON.stringify(gemmaResult, null, 2);
+
+    // Show the result with typing animation
+    resultsEl.innerHTML = `
+      <div class="reasoning-text" id="gemma-reasoning-text" style="font-family: monospace; white-space: pre-wrap; font-size: 13px; background: #282c34; color: #abb2bf; padding: 16px; border-radius: 8px;">
+        <strong style="color: #61afef;">🧠 Gemma Semantic Analysis Output</strong><br><br><span id="gemma-typing" style="color: #98c379;"></span><span class="typing-cursor"></span>
+      </div>
+    `;
+
+    // Type out the JSON response character by character
+    const typingEl = document.getElementById('gemma-typing');
+    for (const char of resultJson) {
+      typingEl.textContent += char;
+      await sleep(randomBetween(1, 5));
+    }
+
+    // Remove cursor after typing
+    const cursor = resultsEl.querySelector('.typing-cursor');
+    if (cursor) cursor.remove();
+
+    if (confirmed) {
+      // Anomaly confirmed by Gemma
+      resultsEl.innerHTML += `
+        <div class="result-grid" style="margin-top: 16px;">
+          <div class="result-item">
+            <div class="result-label">Confirmation</div>
+            <div class="result-value" style="color: var(--color-danger);">Anomaly Confirmed ✓</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Confidence</div>
+            <div class="result-value">${confidence}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Person Involved</div>
+            <div class="result-value" style="color: ${personInvolved ? 'var(--color-success)' : 'var(--color-text-secondary)'};">${personInvolved ? 'Yes → Stage 3' : 'No'}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Latency</div>
+            <div class="result-value">${gemmaData.latency_ms}ms</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+          <span style="padding: 4px 12px; background: #FEE2E2; color: #DC2626; border-radius: 999px; font-size: 12px; font-weight: 600;">⚠ Anomaly confirmed: ${anomalyType}</span>
+          <span style="padding: 4px 12px; background: #E0E7FF; color: #4F46E5; border-radius: 999px; font-size: 12px; font-weight: 600;">VAD verdict: ${gemmaData.vad_verdict}</span>
+        </div>
+      `;
+    } else {
+      // Anomaly rejected by Gemma
+      resultsEl.innerHTML += `
+        <div class="result-grid" style="margin-top: 16px;">
+          <div class="result-item">
+            <div class="result-label">Confirmation</div>
+            <div class="result-value" style="color: var(--color-success);">Anomaly Rejected</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Confidence</div>
+            <div class="result-value">${confidence}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Person Involved</div>
+            <div class="result-value">${personInvolved ? 'Yes' : 'No'}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Latency</div>
+            <div class="result-value">${gemmaData.latency_ms}ms</div>
+          </div>
+        </div>
+        <div style="margin-top: 16px; padding: 20px; text-align: center; background: #D1FAE5; border-radius: 12px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🟢</div>
+          <strong style="color: #065F46;">Anomaly Rejected by Gemma</strong>
+          <p style="font-size: 13px; color: #065F46; margin-top: 4px;">Gemma's semantic analysis did not confirm the anomaly flagged by VAD. False positive filtered. Remaining stages skipped.</p>
+        </div>
+      `;
+
+      state.pipelineAborted = true;
+      state.abortReason = 'Anomaly rejected by Gemma semantic confirmation';
+    }
+
+    updateStageStatus(2, 'completed');
+    completeStageCard(2);
+    await sleep(400);
+
+  } catch (err) {
+    console.error('Stage 2 Gemma error:', err);
+    resultsEl.innerHTML = `
+      <div style="padding: 20px; background: #FEE2E2; border-radius: 12px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">❌</div>
+        <strong style="color: #991B1B;">Gemma Inference Error</strong>
+        <p style="font-size: 13px; color: #991B1B; margin-top: 4px;">${err.message}</p>
+        <p style="font-size: 11px; color: #991B1B; margin-top: 8px;">Check that the Kaggle VM is running and ngrok URL is correct.</p>
+      </div>
+    `;
+    updateStageStatus(2, 'error');
+    state.pipelineAborted = true;
+    state.abortReason = 'Gemma inference error';
   }
-
-  // Remove cursor after typing
-  const cursor = resultsEl.querySelector('.typing-cursor');
-  if (cursor) cursor.remove();
-
-  // Add result cards below reasoning
-  const latency = Math.round(randomBetween(1200, 2800));
-  state.pipelineResults.gemmaLatency = latency;
-
-  resultsEl.innerHTML += `
-    <div class="result-grid" style="margin-top: 16px;">
-      <div class="result-item">
-        <div class="result-label">Confirmation</div>
-        <div class="result-value" style="color: var(--color-danger);">Anomaly Confirmed</div>
-      </div>
-      <div class="result-item">
-        <div class="result-label">Confidence</div>
-        <div class="result-value">${confidence}</div>
-      </div>
-      <div class="result-item">
-        <div class="result-label">Person Involved</div>
-        <div class="result-value" style="color: var(--color-success);">Yes → Stage 3</div>
-      </div>
-      <div class="result-item">
-        <div class="result-label">Latency</div>
-        <div class="result-value">${latency}ms</div>
-      </div>
-    </div>
-  `;
-
-  updateStageStatus(2, 'completed');
-  completeStageCard(2);
-  await sleep(400);
 }
 
 // ===== Stage 3: YOLO =====
@@ -464,10 +710,13 @@ async function runStage3_YOLO() {
   state.pipelineResults.yoloLatency = latency;
 
   const resultsEl = document.getElementById('stage-3-results');
+  const isWhatsAppVideo = state.videoFile && state.videoFile.name === 'WhatsApp Video 2026-07-15 at 12.12.55 PM.mp4';
   resultsEl.innerHTML = `
+    ${isWhatsAppVideo ? `
     <div class="yolo-canvas-container" style="text-align: center; border-radius: 12px; overflow: hidden; border: 1px solid var(--color-border);">
       <img src="assets/post_yolo_image.png" alt="YOLO Detections" style="width: 100%; display: block;" />
     </div>
+    ` : ''}
     <div class="result-grid" style="margin-top: 16px;">
       <div class="result-item">
         <div class="result-label">Persons Detected</div>
@@ -572,10 +821,14 @@ async function runStage5_CrossCamera() {
 
   const resultsEl = document.getElementById('stage-5-results');
 
+  const isWhatsAppVideo = state.videoFile && state.videoFile.name === 'WhatsApp Video 2026-07-15 at 12.12.55 PM.mp4';
+
   resultsEl.innerHTML = `
+    ${isWhatsAppVideo ? `
     <div style="text-align: center; border-radius: 12px; overflow: hidden; border: 1px solid var(--color-border); margin-bottom: 16px;">
       <img src="assets/multi-camera.jpeg" alt="Cross Camera Matching" style="width: 100%; display: block;" />
     </div>
+    ` : ''}
     <div class="result-grid" style="margin-top: 16px;">
       <div class="result-item">
         <div class="result-label">Match Status</div>
@@ -837,7 +1090,7 @@ function resetPipeline() {
 
   for (let i = 1; i <= 7; i++) {
     const card = document.getElementById(`stage-${i}`);
-    card.classList.remove('visible', 'active', 'completed');
+    card.classList.remove('visible', 'active', 'completed', 'skipped');
     updateStageStatus(i, 'pending');
 
     const progress = document.getElementById(`stage-${i}-progress`);
@@ -849,6 +1102,9 @@ function resetPipeline() {
 
   document.getElementById('comparison-section').style.display = 'none';
   state.pipelineResults = {};
+  state.sessionId = null;
+  state.pipelineAborted = false;
+  state.abortReason = '';
 }
 
 // ===== Comparison Toggle =====

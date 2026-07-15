@@ -905,6 +905,11 @@ img, video {
   color: var(--color-danger);
 }
 
+.stage-status.skipped {
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+}
+
 .stage-status .status-dot {
   width: 8px;
   height: 8px;
@@ -923,7 +928,8 @@ img, video {
 }
 
 .stage-card.active .stage-body,
-.stage-card.completed .stage-body {
+.stage-card.completed .stage-body,
+.stage-card.skipped .stage-body {
   display: block;
   animation: fadeSlideUp 0.4s var(--ease-out);
 }

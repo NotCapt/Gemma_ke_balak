@@ -7,7 +7,7 @@ import numpy as np
 # =====================================================================
 # ⚙️ LOCAL CLIENT CONFIGURATION
 # =====================================================================
-KAGGLE_NGROK_URL = "https://5e59-34-134-45-216.ngrok-free.app"
+KAGGLE_NGROK_URL = "https://67e9-34-134-45-216.ngrok-free.app"
 
 # Use the video we have been working with
 VIDEO_PATH = r"C:\Users\govin\Downloads\t2\WhatsApp Video 2026-07-15 at 12.12.55 PM.mp4"
@@ -19,7 +19,18 @@ def get_dynamic_prompt(vad_verdict: str) -> str:
         f"Analyze the progression of events across the grid panels from top-left to bottom-right. "
         f"Verify if the visual evidence aligns with the '{vad_verdict}' verdict. "
         f"Identify any suspicious activities, focusing on vehicle break-ins, forced entry, or theft. "
-        f"Provide a detailed, concise summary of the actions observed across the grid panels."
+        f"Provide an extremely short summary of actions observed (less than 40 words).\n\n"
+        f"You MUST output your response strictly as a JSON object with this format:\n"
+        f"{{\n"
+        f"  \"confirmed_anomaly\": true/false,\n"
+        f"  \"person_involved\": true/false,\n"
+        f"  \"anomaly_type\": \"class_name\",\n"
+        f"  \"objects_detected\": [\"object1\", \"object2\"],\n"
+        f"  \"reasoning\": \"under 15 words observation\",\n"
+        f"  \"confidence\": 0.95,\n"
+        f"  \"department_to_notify\": \"Police\" or \"Hospital\" or \"Fire Dept.\"\n"
+        f"}}\n"
+        f"Do not include any Markdown formatting or extra text outside the JSON object. Keep reasoning extremely short."
     )
 
 # =====================================================================
@@ -27,7 +38,7 @@ def get_dynamic_prompt(vad_verdict: str) -> str:
 # =====================================================================
 def create_3x3_frame_grid(video_path: str, start_sec: float=None, end_sec: float=None) -> Image.Image:
     """Extracts 9 chronological frames from a video anomaly interval and stitches them into a 3x3 PIL Canvas."""
-    print(f"🎬 Processing local video stream: {video_path}")
+    print(f"[Processing] local video stream: {video_path}")
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise FileNotFoundError(f"Could not open or find video file: {video_path}")
@@ -88,7 +99,7 @@ def create_3x3_frame_grid(video_path: str, start_sec: float=None, end_sec: float
     for i, img in enumerate(frames):
         grid_image.paste(img, ((i % 3) * frame_w, (i // 3) * frame_h))
         
-    print(f"📷 3x3 Grid Matrix built successfully ({grid_image.size[0]}x{grid_image.size[1]}px).")
+    print(f"[Success] 3x3 Grid Matrix built successfully ({grid_image.size[0]}x{grid_image.size[1]}px).")
     return grid_image
 
 # =====================================================================
@@ -97,7 +108,7 @@ def create_3x3_frame_grid(video_path: str, start_sec: float=None, end_sec: float
 def run_gemma_inference(grid_image: Image.Image, prompt: str, server_url: str) -> str:
     """Sends the processed frame matrix to the remote Gemma-4 multimodal engine."""
     endpoint = f"{server_url}/api/inference"
-    print(f"🚀 Dispatching visual payload to remote Gemma VLM endpoint: {endpoint}")
+    print(f"[Dispatching] visual payload to remote Gemma VLM endpoint: {endpoint}")
     
     img_byte_arr = io.BytesIO()
     grid_image.save(img_byte_arr, format='PNG')

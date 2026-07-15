@@ -157,12 +157,18 @@ def create_collages(video_path, events, fps, reports_dir):
         event["start_time_sec"] = round(start_time, 2)
         event["end_time_sec"] = round(end_time, 2)
 
-        # Generate timestamps at exactly 2 fps (0.5s interval), up to 8 frames
+        # Generate timestamps: for short events use 2 fps (0.5s interval), for long events space 8 frames evenly
         group_ts = []
-        t = start_time
-        while t <= end_time and len(group_ts) < 8:
-            group_ts.append(t)
-            t += 0.5
+        event_duration = end_time - start_time
+        if event_duration <= 4.0:
+            t = start_time
+            while t <= end_time and len(group_ts) < 8:
+                group_ts.append(t)
+                t += 0.5
+        else:
+            step = event_duration / 7.0
+            for i in range(8):
+                group_ts.append(start_time + i * step)
 
         group = []
         for t in group_ts:

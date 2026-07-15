@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrowdGuard // Police Dispatch Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body id="body-main">
+
+  <!-- HEADER -->
+  <header class="dashboard-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.39 7.5 12 10.82 5.61 7.5 12 4.18zM5 9.18l6 3.33v6.31l-6-3.33V9.18zm8 9.64v-6.31l6-3.33v6.31l-6 3.33z"/>
+        </svg>
+      </div>
+      <h1>CrowdGuard Dispatch</h1>
+    </div>
+    <div style="display: flex; gap: 16px; align-items: center;">
+      <div class="status-indicator ok" id="pipeline-status">LINK: SECURE</div>
+      <div class="sys-clock" id="sys-clock">00:00:00</div>
+    </div>
+  </header>
+
+  <div class="dashboard-layout">
+    
+    <!-- SOLE PANEL: FORENSIC INTEL -->
+    <main class="panel">
+      <div class="panel-header">
+        <h2>Incident Dispatch Intel</h2>
+      </div>
+      <div class="panel-content">
+        
+        <div class="meter-container" style="margin-top: 0;">
+          <div class="meter-header">
+            <span>Threat Severity</span>
+            <span id="sev-val" style="font-size: 16px; font-weight: 700; color: var(--color-danger);">0.00</span>
+          </div>
+          <div class="meter-track">
+            <div class="meter-fill" id="meter-fill"></div>
+          </div>
+        </div>
+
+        <!-- Rich Data Grid (Hidden by default until alert) -->
+        <div id="rich-data-container" style="display: none; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px;">
+          
+          <div style="background: var(--color-bg-subtle); padding: 12px; border-radius: 8px;">
+            <h3 style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 4px;">Location / Sector</h3>
+            <div id="intel-location" style="font-weight: 600; font-size: 13px;">--</div>
+          </div>
+          
+          <div style="background: var(--color-bg-subtle); padding: 12px; border-radius: 8px;">
+            <h3 style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 4px;">Camera Feeds</h3>
+            <div id="intel-camera" style="font-weight: 600; font-size: 13px;">--</div>
+          </div>
+
+          <div style="background: var(--color-bg-subtle); padding: 12px; border-radius: 8px;">
+            <h3 style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 4px;">VAD Score</h3>
+            <div id="intel-vad" style="font-weight: 600; font-size: 13px;">--</div>
+          </div>
+
+          <div style="background: var(--color-bg-subtle); padding: 12px; border-radius: 8px;">
+            <h3 style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 4px;">Gemma Confidence</h3>
+            <div id="intel-gemma" style="font-weight: 600; font-size: 13px;">--</div>
+          </div>
+
+          <div style="background: var(--color-bg-subtle); padding: 12px; border-radius: 8px; grid-column: span 2; border-left: 3px solid var(--color-danger);">
+            <h3 style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 4px;">Intended Department</h3>
+            <div id="intel-dept" style="font-weight: 700; font-size: 14px; color: var(--color-danger);">--</div>
+          </div>
+
+        </div>
+
+        <div class="intel-panel" id="intel-text" style="margin-top: 24px; margin-bottom: 24px;">
+          Awaiting dispatch alerts from Central Command...
+        </div>
+
+        <div class="log-stream" id="forensic-log">
+          <div class="log-entry">
+            <span class="log-timestamp">[System]</span>
+            <span class="log-normal">Initialization complete. Link secured.</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px;">
+          <button class="btn" id="btn-ack" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-text-tertiary);" disabled>
+            Acknowledge Alert
+          </button>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
