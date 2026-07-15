@@ -1,0 +1,23 @@
+# Virtual Environments
+vad_env/
+venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Model Weights
+*.pth
+*.pt
+model/
+VadCLIP/model/
+
+# Temporary Files and Artifacts
+*.npy
+*.mp4
+temp_features.npy
+
+# OS Files
+.DS_Store
+Thumbs.db
