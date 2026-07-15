@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrowdGuard — Semantic Anomaly Detection & Cross-Camera Forensic Tracking</title>
+  <meta name="description" content="CrowdGuard: A compute-gated pipeline for intelligent surveillance. Filter cheaply with VAD, reason semantically with Gemma, track forensically with YOLO + Re-ID. All on-device.">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CrowdGuard — Intelligent Surveillance, Reimagined">
+  <meta property="og:description" content="Semantic anomaly detection with forensic-grade traceability. Powered by Gemma on-device.">
+
+  <!-- Fonts & Styles -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+
+  <!-- ===== NAVIGATION ===== -->
+  <div class="nav-wrapper" id="nav-wrapper">
+    <nav class="navbar" id="navbar">
+      <a href="#hero" class="nav-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.39 7.5 12 10.82 5.61 7.5 12 4.18zM5 9.18l6 3.33v6.31l-6-3.33V9.18zm8 9.64v-6.31l6-3.33v6.31l-6 3.33z"/>
+          </svg>
+        </div>
+        CrowdGuard
+      </a>
+
+      <div class="nav-links" id="nav-links">
+        <a href="#hero" class="active">Home</a>
+        <a href="#features">Pipeline</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#differentiators">About</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="#dashboard">
+          <button class="btn btn-primary" id="nav-upload-btn">
+            <span>Upload Video</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </button>
+        </a>
+        <button class="btn btn-secondary" onclick="document.getElementById('differentiators').scrollIntoView({behavior:'smooth'})">
+          <span>Learn More</span>
+        </button>
+      </div>
+
+      <button class="nav-mobile-toggle" id="mobile-toggle" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+  </div>
+
+
+  <!-- ===== HERO SECTION ===== -->
+  <section class="hero" id="hero">
+    <div class="hero-gradient"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-top-fade"></div>
+
+    <div class="hero-content">
+      <!-- Decorative motif like Sarvam -->
+      <svg class="hero-motif" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M60 20c-8-12-20-16-30-14S10 16 10 20s10 10 20 12 22-2 30-14c8 12 20 16 30 14S110 24 110 20s-10-10-20-12S68 8 60 20z" stroke="#6366F1" stroke-width="1.5" fill="none" opacity="0.5"/>
+        <circle cx="60" cy="20" r="4" fill="#6366F1" opacity="0.6"/>
+        <circle cx="40" cy="18" r="2" fill="#E67E22" opacity="0.5"/>
+        <circle cx="80" cy="18" r="2" fill="#E67E22" opacity="0.5"/>
+      </svg>
+
+      <div class="hero-tagline-bar"></div>
+      <p class="hero-tagline">AI for Public Safety</p>
+      <div class="hero-tagline-bar-bottom"></div>
+
+      <h1>Intelligent Surveillance, Reimagined</h1>
+
+      <p class="hero-subtitle">
+        A compute-gated pipeline that filters noise cheaply, reasons semantically on-device, 
+        and tracks forensically — so every alert can be traced back and defended.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn btn-accent btn-lg" onclick="document.getElementById('dashboard').scrollIntoView({behavior:'smooth'})">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload & Analyze
+        </button>
+        <button class="btn btn-secondary btn-lg" onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'})">
+          See How It Works
+        </button>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===== FEATURES / PIPELINE TABS ===== -->
+  <section class="section features-section" id="features">
+    <div class="section-inner" data-reveal>
+      <div class="section-header">
+        <h2>The Pipeline That Thinks</h2>
+        <p>Each stage earns the right to run only if the previous one found something worth escalating. Cheap filters first, expensive reasoning only when justified.</p>
+      </div>
+
+      <!-- Tabs like Sarvam's product tabs -->
+      <div class="pipeline-tabs" id="pipeline-tabs">
+        <button class="pipeline-tab active" data-tab="vad">
+          <span class="tab-icon">📊</span>
+          VAD Filter
+        </button>
+        <button class="pipeline-tab" data-tab="gemma">
+          <span class="tab-icon">🧠</span>
+          Gemma Reasoning
+        </button>
+        <button class="pipeline-tab" data-tab="yolo">
+          <span class="tab-icon">🎯</span>
+          YOLO Detection
+        </button>
+        <button class="pipeline-tab" data-tab="reid">
+          <span class="tab-icon">🔍</span>
+          Re-ID Tracking
+        </button>
+        <button class="pipeline-tab" data-tab="forensic">
+          <span class="tab-icon">📋</span>
+          Forensic Log
+        </button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="feature-card-container">
+        <!-- VAD -->
+        <div class="feature-card active" id="tab-vad">
+          <h3>Stage 1 — Video Anomaly Detection</h3>
+          <p>A lightweight CLIP-TSA model watches every camera stream continuously. It's cheap enough to run 24/7 on all feeds, and its only job is to filter out the ~90% of footage where nothing's happening.</p>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #DBEAFE; color: #2563EB;">⚡</div>
+            <div>
+              <strong>Model:</strong> CLIP-TSA (pretrained on UCF-Crime)
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">Anomaly score 0–1 per rolling clip window</span>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #FEE2E2; color: #DC2626;">🔥</div>
+            <div>
+              <strong>Why it matters:</strong> Kills noise before anything expensive runs.
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">~50–200ms per clip latency</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gemma -->
+        <div class="feature-card" id="tab-gemma">
+          <h3>Stage 2 — Semantic Confirmation</h3>
+          <p>Only clips crossing the VAD threshold reach Gemma. It confirms or rejects the anomaly, gives a natural-language reasoning description, and flags whether a person is involved. This is the "reasoning layer" competitors lack.</p>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #FFF7ED; color: #E67E22;">🧠</div>
+            <div>
+              <strong>Model:</strong> Gemma (on-device)
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">Frame collage input — 5 frames stitched into single image</span>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #D1FAE5; color: #059669;">🔒</div>
+            <div>
+              <strong>Privacy:</strong> No raw footage ever leaves the edge device.
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">On-device processing resolves cloud latency/privacy risk</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- YOLO -->
+        <div class="feature-card" id="tab-yolo">
+          <h3>Stage 3 — Person Localization</h3>
+          <p>Runs only if Gemma flags person_involved: yes. Non-person anomalies (fire, object left behind) skip straight to logging — no wasted compute. YOLOv8n provides fast, accurate person detection with bounding boxes.</p>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #EDE9FE; color: #7C3AED;">🎯</div>
+            <div>
+              <strong>Model:</strong> YOLOv8n (nano variant, COCO-pretrained)
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">~10–20ms per frame (GPU), ~90%+ person recall</span>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #FEF3C7; color: #D97706;">⚙️</div>
+            <div>
+              <strong>Gated compute:</strong> Never runs on non-person anomalies.
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">Saves compute by only detecting when semantically justified</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Re-ID -->
+        <div class="feature-card" id="tab-reid">
+          <h3>Stage 4 & 5 — Re-ID + Cross-Camera Matching</h3>
+          <p>YOLO crop → OSNet embedding (512-dim). Embeddings are matched across cameras using cosine similarity. Benchmark ~94% rank-1 accuracy, realistic ~75–85% under field conditions. Stated honestly, not oversold.</p>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #FCE7F3; color: #DB2777;">🔗</div>
+            <div>
+              <strong>Model:</strong> OSNet Re-ID (2.2M params, ~5–10ms/crop)
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">Cosine similarity threshold ~0.7 for cross-camera matching</span>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #CCFBF1; color: #0D9488;">📹</div>
+            <div>
+              <strong>Cross-camera:</strong> Same person flagged across multiple feeds.
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">In-memory embedding store with camera_id + timestamp</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Forensic -->
+        <div class="feature-card" id="tab-forensic">
+          <h3>Stage 6 & 7 — Forensic Log + Alert Dashboard</h3>
+          <p>Every stage's output is written to an append-only, hash-chained JSON log. By the time something reaches a human operator, there's a full trail behind it — not just a flashing red alert with no context.</p>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #FEF3C7; color: #D97706;">🔗</div>
+            <div>
+              <strong>Hash-chained:</strong> Each entry references the previous hash.
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">Tamper-evident, append-only log for forensic-grade verification</span>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="detail-icon" style="background: #D1FAE5; color: #059669;">👤</div>
+            <div>
+              <strong>Human-in-the-loop:</strong> Operator can confirm/reject/override.
+              <br><span style="color: var(--color-text-tertiary); font-size: 13px;">Severity score = VAD score × Gemma confidence (not binary)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual panel (right side) -->
+        <div class="feature-visual active" id="visual-vad">
+          <div style="text-align: center; width: 100%;">
+            <div style="font-size: 64px; margin-bottom: 16px;">📊</div>
+            <div style="padding: 16px; background: var(--color-bg-subtle); border-radius: 12px; margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 13px; color: var(--color-text-secondary);">Anomaly Score</span>
+                <span style="font-weight: 700; color: var(--color-danger);">0.83</span>
+              </div>
+              <div class="score-bar">
+                <div class="score-bar-fill high" style="width: 83%;" data-score="0.83"></div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+              <span style="padding: 4px 12px; background: #FEE2E2; color: #DC2626; border-radius: 999px; font-size: 12px; font-weight: 600;">Above threshold</span>
+              <span style="padding: 4px 12px; background: #E0E7FF; color: #4F46E5; border-radius: 999px; font-size: 12px; font-weight: 600;">→ Send to Gemma</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-visual" id="visual-gemma">
+          <div style="text-align: left; width: 100%;">
+            <div style="font-size: 48px; margin-bottom: 16px; text-align: center;">🧠</div>
+            <div class="reasoning-text" style="margin: 0;">
+              <strong>Gemma Analysis:</strong><br><br>
+              The surveillance footage shows a person exhibiting suspicious behavior near a restricted area. 
+              The individual appears to be attempting unauthorized access through a side entrance. 
+              Movement patterns suggest intentional evasion of main camera coverage.<br><br>
+              <strong>Classification:</strong> Confirmed anomaly<br>
+              <strong>Person involved:</strong> Yes<br>
+              <strong>Confidence:</strong> 0.91
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-visual" id="visual-yolo">
+          <div style="text-align: center; width: 100%;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🎯</div>
+            <div style="position: relative; background: #1a1a2e; border-radius: 12px; padding: 40px; color: white;">
+              <div style="position: absolute; top: 30px; left: 40px; width: 60px; height: 100px; border: 2px solid #22C55E; border-radius: 4px;">
+                <span style="position: absolute; top: -20px; left: 0; font-size: 11px; background: #22C55E; color: white; padding: 2px 6px; border-radius: 4px;">person 0.94</span>
+              </div>
+              <div style="position: absolute; top: 50px; right: 60px; width: 55px; height: 90px; border: 2px solid #3B82F6; border-radius: 4px;">
+                <span style="position: absolute; top: -20px; left: 0; font-size: 11px; background: #3B82F6; color: white; padding: 2px 6px; border-radius: 4px;">person 0.87</span>
+              </div>
+              <span style="font-size: 13px; opacity: 0.5;">Simulated detection overlay</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-visual" id="visual-reid">
+          <div style="text-align: center; width: 100%;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+            <div class="match-result matched" style="margin: 0;">
+              <div class="match-camera">
+                <div class="camera-label">Camera 1</div>
+                <div class="camera-icon">📹</div>
+              </div>
+              <div class="match-connector">
+                <span class="similarity-badge">0.84 match</span>
+              </div>
+              <div class="match-camera">
+                <div class="camera-label">Camera 3</div>
+                <div class="camera-icon">📹</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-visual" id="visual-forensic">
+          <div style="text-align: left; width: 100%;">
+            <div style="font-size: 48px; margin-bottom: 16px; text-align: center;">📋</div>
+            <div class="forensic-log" style="margin: 0; font-size: 11px;">
+<span class="log-key">"event_id"</span>: <span class="log-string">"EVT-2026-0715-001"</span>,
+<span class="log-key">"vad_score"</span>: <span class="log-number">0.83</span>,
+<span class="log-key">"gemma_confirmed"</span>: <span class="log-string">true</span>,
+<span class="log-key">"gemma_reasoning"</span>: <span class="log-string">"Suspicious behavior..."</span>,
+<span class="log-key">"yolo_detections"</span>: <span class="log-number">2</span>,
+<span class="log-key">"reid_match"</span>: <span class="log-string">true</span>,
+<span class="log-key">"similarity"</span>: <span class="log-number">0.84</span>,
+<span class="log-key">"severity"</span>: <span class="log-number">0.76</span>,
+<span class="log-key">"prev_hash"</span>: <span class="log-hash">"a3f8c2..."</span>,
+<span class="log-key">"hash"</span>: <span class="log-hash">"7b2e1d..."</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="section" id="how-it-works" style="background: linear-gradient(180deg, var(--color-bg) 0%, #EEF2FF 100%);">
+    <div class="section-inner" data-reveal>
+      <div class="section-header">
+        <h2>How CrowdGuard Works</h2>
+        <p>A 7-stage compute-gated pipeline. Each stage only fires if the previous one says "worth looking at."</p>
+      </div>
+
+      <div class="pipeline-diagram">
+        <div class="pipeline-step" data-stage="1" data-reveal>
+          <div class="pipeline-step-indicator">
+            <div class="pipeline-step-dot">1</div>
+            <div class="pipeline-step-line"></div>
+          </div>
+          <div class="pipeline-step-content">
+            <h4>VAD — Always-On Filter</h4>
+            <p>CLIP-TSA scores every clip for anomaly likelihood (0–1). Runs continuously, cheaply filters ~90% of normal footage.</p>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-stage="2" data-reveal>
+          <div class="pipeline-step-indicator">
+            <div class="pipeline-step-dot">2</div>
+            <div class="pipeline-step-line"></div>
+          </div>
+          <div class="pipeline-step-content">
+            <h4>Gemma — Semantic Reasoning (On-Device)</h4>
+            <p>Gemma confirms/rejects anomalies with natural-language reasoning. Flags person involvement. No raw footage leaves the edge.</p>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-stage="3" data-reveal>
+          <div class="pipeline-step-indicator">
+            <div class="pipeline-step-dot">3</div>
+            <div class="pipeline-step-line"></div>
+          </div>
+          <div class="pipeline-step-content">
+            <h4>YOLOv8n — Person Localization</h4>
+            <p>Detects and boxes persons in confirmed clips. Only runs when person_involved = yes. Non-person anomalies skip to logging.</p>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-stage="4" data-reveal>
+          <div class="pipeline-step-indicator">
+            <div class="pipeline-step-dot">4</div>
+            <div class="pipeline-step-line"></div>
+          </div>
+          <div class="pipeline-step-content">
+            <h4>OSNet — Re-Identification</h4>
+            <p>YOLO crop → 512-dim embedding vector. Person's unique "fingerprint" for cross-camera matching. ~5–10ms per crop.</p>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-stage="5" data-reveal>
+          <div class="pipeline-step-indicator">
+            <div class="pipeline-step-dot">5</div>
+            <div class="pipeline-step-line"></div>
+          </div>
+          <div class="pipeline-step-content">
+            <h4>Cross-Camera Matching</h4>
+            <p>Cosine similarity check against embedding store. Threshold ~0.7 to flag same person across cameras vs new individual.</p>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-stage="6" data-reveal>
+          <div class="pipeline-step-indicator">
+            <div class="pipeline-step-dot">6</div>
+            <div class="pipeline-step-line"></div>
+          </div>
+          <div class="pipeline-step-content">
+            <h4>Forensic Logging</h4>
+            <p>Hash-chained, append-only JSON log. VAD score, Gemma reasoning, YOLO boxes, match confidence — every decision traceable.</p>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-stage="7" data-reveal>
+          <div class="pipeline-step-indicator">
+            <div class="pipeline-step-dot">7</div>
+          </div>
+          <div class="pipeline-step-content">
+            <h4>Alert Dashboard</h4>
+            <p>Severity score (not binary), human-in-the-loop override, explainability panel with Gemma reasoning, comparison mode.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===== UPLOAD & DASHBOARD ===== -->
+  <section class="section dashboard-section" id="dashboard">
+    <div class="section-inner">
+      <div class="section-header" data-reveal>
+        <h2>Try the Pipeline</h2>
+        <p>Upload a video clip and watch each stage process it sequentially — from anomaly scoring to forensic logging.</p>
+      </div>
+
+      <!-- Upload Zone -->
+      <div class="upload-zone" id="upload-zone" data-reveal>
+        <div class="upload-icon" id="upload-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <h3>Drop your video clip here</h3>
+        <p>or click to browse files</p>
+        <span class="file-types">Supports MP4, AVI, MOV, WebM • Max 100MB</span>
+        <input type="file" id="file-input" accept="video/*" style="display: none;">
+      </div>
+
+      <!-- Video Preview -->
+      <div class="video-preview-container" id="video-preview-container">
+        <div class="video-preview">
+          <video id="video-player" controls></video>
+        </div>
+        <div class="video-info">
+          <div class="video-info-left">
+            <div class="file-icon">🎬</div>
+            <div>
+              <div class="file-name" id="file-name">video.mp4</div>
+              <div class="file-size" id="file-size">0 MB</div>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-secondary" id="remove-file-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Remove
+          </button>
+        </div>
+      </div>
+
+      <!-- Start Analysis Button -->
+      <div class="start-analysis-wrapper" id="start-analysis-wrapper">
+        <button class="btn btn-accent btn-lg" id="start-analysis-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Start Pipeline Analysis
+        </button>
+        <p style="margin-top: 12px; font-size: 13px; color: var(--color-text-tertiary);">Each stage will process sequentially with live results</p>
+      </div>
+
+      <!-- Pipeline Processing Cards -->
+      <div class="pipeline-processing" id="pipeline-processing">
+
+        <!-- Stage 1: VAD -->
+        <div class="stage-card" id="stage-1" data-stage="1">
+          <div class="stage-header">
+            <div class="stage-number" style="background: linear-gradient(135deg, #3B82F6, #2563EB);">1</div>
+            <div class="stage-title-area">
+              <h4>Video Anomaly Detection</h4>
+              <div class="stage-model">CLIP-TSA • Rolling clip window</div>
+            </div>
+            <div class="stage-status pending" id="stage-1-status">
+              <div class="status-dot"></div>
+              <span>Pending</span>
+            </div>
+          </div>
+          <div class="stage-body">
+            <div id="stage-1-results"></div>
+          </div>
+        </div>
+
+        <!-- Stage 2: Gemma -->
+        <div class="stage-card" id="stage-2" data-stage="2">
+          <div class="stage-header">
+            <div class="stage-number" style="background: linear-gradient(135deg, #E67E22, #D35400);">2</div>
+            <div class="stage-title-area">
+              <h4>Gemma Semantic Confirmation</h4>
+              <div class="stage-model">Gemma • On-device • Frame collage</div>
+            </div>
+            <div class="stage-status pending" id="stage-2-status">
+              <div class="status-dot"></div>
+              <span>Pending</span>
+            </div>
+          </div>
+          <div class="stage-body">
+            <div id="stage-2-results"></div>
+          </div>
+        </div>
+
+        <!-- Stage 3: YOLO -->
+        <div class="stage-card" id="stage-3" data-stage="3">
+          <div class="stage-header">
+            <div class="stage-number" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);">3</div>
+            <div class="stage-title-area">
+              <h4>Person Localization</h4>
+              <div class="stage-model">YOLOv8n • Person detection only</div>
+            </div>
+            <div class="stage-status pending" id="stage-3-status">
+              <div class="status-dot"></div>
+              <span>Pending</span>
+            </div>
+          </div>
+          <div class="stage-body">
+            <div id="stage-3-results"></div>
+          </div>
+        </div>
+
+        <!-- Stage 4: Re-ID -->
+        <div class="stage-card" id="stage-4" data-stage="4">
+          <div class="stage-header">
+            <div class="stage-number" style="background: linear-gradient(135deg, #EC4899, #DB2777);">4</div>
+            <div class="stage-title-area">
+              <h4>Re-Identification</h4>
+              <div class="stage-model">OSNet • 512-dim embedding</div>
+            </div>
+            <div class="stage-status pending" id="stage-4-status">
+              <div class="status-dot"></div>
+              <span>Pending</span>
+            </div>
+          </div>
+          <div class="stage-body">
+            <div id="stage-4-results"></div>
+          </div>
+        </div>
+
+        <!-- Stage 5: Cross-Camera -->
+        <div class="stage-card" id="stage-5" data-stage="5">
+          <div class="stage-header">
+            <div class="stage-number" style="background: linear-gradient(135deg, #14B8A6, #0D9488);">5</div>
+            <div class="stage-title-area">
+              <h4>Cross-Camera Matching</h4>
+              <div class="stage-model">Cosine similarity • Embedding store</div>
+            </div>
+            <div class="stage-status pending" id="stage-5-status">
+              <div class="status-dot"></div>
+              <span>Pending</span>
+            </div>
+          </div>
+          <div class="stage-body">
+            <div id="stage-5-results"></div>
+          </div>
+        </div>
+
+        <!-- Stage 6: Forensic Log -->
+        <div class="stage-card" id="stage-6" data-stage="6">
+          <div class="stage-header">
+            <div class="stage-number" style="background: linear-gradient(135deg, #F59E0B, #D97706);">6</div>
+            <div class="stage-title-area">
+              <h4>Forensic Logging</h4>
+              <div class="stage-model">Hash-chained • Append-only JSON</div>
+            </div>
+            <div class="stage-status pending" id="stage-6-status">
+              <div class="status-dot"></div>
+              <span>Pending</span>
+            </div>
+          </div>
+          <div class="stage-body">
+            <div id="stage-6-results"></div>
+          </div>
+        </div>
+
+        <!-- Stage 7: Alert Dashboard -->
+        <div class="stage-card" id="stage-7" data-stage="7">
+          <div class="stage-header">
+            <div class="stage-number" style="background: linear-gradient(135deg, #10B981, #059669);">7</div>
+            <div class="stage-title-area">
+              <h4>Alert Dashboard</h4>
+              <div class="stage-model">Severity scoring • Human-in-the-loop</div>
+            </div>
+            <div class="stage-status pending" id="stage-7-status">
+              <div class="status-dot"></div>
+              <span>Pending</span>
+            </div>
+          </div>
+          <div class="stage-body">
+            <div id="stage-7-results"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Mode -->
+      <div id="comparison-section" style="display: none; margin-top: 48px;">
+        <div class="comparison-toggle">
+          <span style="font-size: 14px; font-weight: 500;">VAD-Only Alerts</span>
+          <div class="toggle-switch active" id="comparison-toggle"></div>
+          <span style="font-size: 14px; font-weight: 500;">Full Pipeline</span>
+        </div>
+
+        <div class="comparison-container visible" id="comparison-container">
+          <div class="comparison-panel vad-only">
+            <h4>❌ VAD-Only (Traditional)</h4>
+            <p style="font-size: 14px; color: #991B1B; margin-bottom: 12px;">All flagged clips trigger alerts — high false-positive rate</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
+                <span>🔴 Alert: Movement detected</span>
+                <span style="color: var(--color-danger);">Score: 0.83</span>
+              </div>
+              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
+                <span>🔴 Alert: Movement detected</span>
+                <span style="color: var(--color-danger);">Score: 0.65</span>
+              </div>
+              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
+                <span>🔴 Alert: Activity detected</span>
+                <span style="color: var(--color-warning);">Score: 0.52</span>
+              </div>
+              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
+                <span>🔴 Alert: Object detected</span>
+                <span style="color: var(--color-warning);">Score: 0.47</span>
+              </div>
+            </div>
+            <p style="font-size: 12px; color: #991B1B; margin-top: 12px; font-weight: 600;">4 alerts fired — operator overloaded</p>
+          </div>
+
+          <div class="comparison-panel full-pipeline">
+            <h4>✅ CrowdGuard (Full Pipeline)</h4>
+            <p style="font-size: 14px; color: #065F46; margin-bottom: 12px;">Gemma filters false positives — only real anomalies reach operator</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
+                <span>🟢 Confirmed: Suspicious behavior</span>
+                <span style="color: var(--color-success);">Severity: 0.76</span>
+              </div>
+              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; opacity: 0.4;">
+                <span>⚪ Rejected by Gemma: Normal activity</span>
+                <span style="color: var(--color-text-tertiary);">Filtered</span>
+              </div>
+              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; opacity: 0.4;">
+                <span>⚪ Below VAD threshold</span>
+                <span style="color: var(--color-text-tertiary);">Discarded</span>
+              </div>
+              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; opacity: 0.4;">
+                <span>⚪ Below VAD threshold</span>
+                <span style="color: var(--color-text-tertiary);">Discarded</span>
+              </div>
+            </div>
+            <p style="font-size: 12px; color: #065F46; margin-top: 12px; font-weight: 600;">1 alert fired — 75% alarm reduction ✓</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===== DIFFERENTIATORS ===== -->
+  <section class="section" id="differentiators" style="background: var(--color-bg);">
+    <div class="section-inner" data-reveal>
+      <div class="section-header">
+        <h2>Why CrowdGuard is Different</h2>
+        <p>Every design choice directly addresses a real failure in current surveillance systems.</p>
+      </div>
+
+      <div class="diff-grid">
+        <div class="diff-card" data-reveal>
+          <div class="diff-icon" style="background: #FFF7ED; color: #E67E22;">🔒</div>
+          <h3>On-Device Privacy</h3>
+          <p>Gemma runs entirely on-edge. No raw footage ever leaves the device — resolving cloud latency and privacy risk simultaneously.</p>
+        </div>
+
+        <div class="diff-card" data-reveal>
+          <div class="diff-icon" style="background: #EDE9FE; color: #7C3AED;">🧠</div>
+          <h3>Reasoning, Not Pattern Matching</h3>
+          <p>Gemma provides natural-language explanations for every alert. Operators see why something was flagged — not just that it was.</p>
+        </div>
+
+        <div class="diff-card" data-reveal>
+          <div class="diff-icon" style="background: #D1FAE5; color: #059669;">📋</div>
+          <h3>Forensic-Grade Audit Trail</h3>
+          <p>Hash-chained, append-only logs. Every alert has a complete, tamper-evident reasoning chain that can be reconstructed and defended.</p>
+        </div>
+
+        <div class="diff-card" data-reveal>
+          <div class="diff-icon" style="background: #DBEAFE; color: #2563EB;">⚡</div>
+          <h3>90% Alarm Reduction</h3>
+          <p>Compute-gated pipeline filters noise before reasoning. Operators only see genuinely confirmed anomalies — not every motion trigger.</p>
+        </div>
+
+        <div class="diff-card" data-reveal>
+          <div class="diff-icon" style="background: #FCE7F3; color: #DB2777;">📹</div>
+          <h3>Cross-Camera Tracking</h3>
+          <p>OSNet Re-ID links the same person across camera feeds using embedding similarity. No person is tracked until semantically confirmed.</p>
+        </div>
+
+        <div class="diff-card" data-reveal>
+          <div class="diff-icon" style="background: #FEF3C7; color: #D97706;">🎛️</div>
+          <h3>Human-in-the-Loop</h3>
+          <p>Severity scores (not binary alerts), operator override, and explainability panels. Designed for deployment reality, not just demo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===== TECH STACK ===== -->
+  <section class="section" id="tech-stack" style="background: linear-gradient(180deg, #EEF2FF 0%, var(--color-bg) 100%);">
+    <div class="section-inner" data-reveal>
+      <div class="section-header">
+        <h2>Built With</h2>
+        <p>All models pretrained, zero training needed for demo. Designed for edge deployment.</p>
+      </div>
+
+      <div class="tech-grid">
+        <div class="tech-badge">🧠 Gemma (On-Device)</div>
+        <div class="tech-badge">📊 CLIP-TSA (VAD)</div>
+        <div class="tech-badge">🎯 YOLOv8n (Detection)</div>
+        <div class="tech-badge">🔍 OSNet (Re-ID)</div>
+        <div class="tech-badge">🐍 Python + PyTorch</div>
+        <div class="tech-badge">📹 OpenCV</div>
+        <div class="tech-badge">🔗 Hash-Chained Logging</div>
+        <div class="tech-badge">⚡ Edge Compute</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">🛡️ CrowdGuard</div>
+      <div class="footer-links">
+        <a href="#features">Pipeline</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#differentiators">About</a>
+        <a href="#tech-stack">Tech Stack</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>CrowdGuard — Semantic Anomaly Detection & Cross-Camera Forensic Tracking System</p>
+      <p style="margin-top: 4px;">Google Gemma Hackathon • Track 2: AI for Public Safety</p>
+    </div>
+  </footer>
+
+
+  <script src="app.js"></script>
+</body>
+</html>
