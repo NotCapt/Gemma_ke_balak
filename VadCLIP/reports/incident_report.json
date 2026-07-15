@@ -1,0 +1,505 @@
+{
+    "video_path": "C:\\Users\\govin\\Downloads\\t2\\WhatsApp Video 2026-07-15 at 12.12.55 PM.mp4",
+    "video_metadata": {
+        "fps": 30.0,
+        "total_frames": 1164,
+        "duration_sec": 38.8
+    },
+    "anomaly_settings": {
+        "threshold": 0.01,
+        "model_path": "model/model_ucf.pth"
+    },
+    "summary": {
+        "total_vad_alerts": 2,
+        "confirmed_alerts": 0,
+        "discarded_alerts": 2,
+        "alarm_fatigue_reduction_rate": "100.00%",
+        "overall_mean_anomaly_score": 0.0013693360378965735,
+        "overall_max_anomaly_score": 0.024767925962805748
+    },
+    "confirmed_events": [],
+    "discarded_events": [
+        {
+            "event_id": 1,
+            "start_time_sec": 0.0,
+            "end_time_sec": 1.03,
+            "predicted_anomaly_type": "Stealing",
+            "max_anomaly_score": 0.024767925962805748,
+            "collage_image": "anomaly_event_1_collage.jpg",
+            "gemma_analysis": {
+                "confirmed_anomaly": false,
+                "person_involved": true,
+                "anomaly_type": "none",
+                "frames_with_contact": [],
+                "duration_at_vehicle_sec": 0,
+                "objects_detected": [
+                    "vehicle",
+                    "person"
+                ],
+                "reasoning": "A person is visible walking in the background across all frames (0.00s, 0.50s, 1.00s). However, the person is far from the vehicles in the foreground and shows no signs of approaching, touching, or loitering near them.",
+                "confidence": 0.95
+            }
+        },
+        {
+            "event_id": 2,
+            "start_time_sec": 36.27,
+            "end_time_sec": 38.9,
+            "predicted_anomaly_type": "Burglary",
+            "max_anomaly_score": 0.021154215559363365,
+            "collage_image": "anomaly_event_2_collage.jpg",
+            "gemma_analysis": {
+                "confirmed_anomaly": false,
+                "person_involved": false,
+                "anomaly_type": "none",
+                "frames_with_contact": [],
+                "duration_at_vehicle_sec": 0,
+                "objects_detected": [
+                    "black SUV",
+                    "silver car"
+                ],
+                "reasoning": "No person is detected in any of the frames. The vehicles are parked and stationary with no suspicious activity or physical contact observed.",
+                "confidence": 1.0
+            }
+        }
+    ],
+    "snippet_scores": [
+        {
+            "snippet_index": 0,
+            "timestamp_sec": 0.0,
+            "binary_anomaly_score": 0.024767925962805748,
+            "class_matching_anomaly_score": 0.02204197645187378
+        },
+        {
+            "snippet_index": 1,
+            "timestamp_sec": 0.53,
+            "binary_anomaly_score": 0.010604980401694775,
+            "class_matching_anomaly_score": 0.020562469959259033
+        },
+        {
+            "snippet_index": 2,
+            "timestamp_sec": 1.07,
+            "binary_anomaly_score": 0.0055734338238835335,
+            "class_matching_anomaly_score": 0.020854592323303223
+        },
+        {
+            "snippet_index": 3,
+            "timestamp_sec": 1.6,
+            "binary_anomaly_score": 0.003266375046223402,
+            "class_matching_anomaly_score": 0.020462632179260254
+        },
+        {
+            "snippet_index": 4,
+            "timestamp_sec": 2.13,
+            "binary_anomaly_score": 0.002157902345061302,
+            "class_matching_anomaly_score": 0.020055294036865234
+        },
+        {
+            "snippet_index": 5,
+            "timestamp_sec": 2.67,
+            "binary_anomaly_score": 0.0015832961071282625,
+            "class_matching_anomaly_score": 0.019828438758850098
+        },
+        {
+            "snippet_index": 6,
+            "timestamp_sec": 3.2,
+            "binary_anomaly_score": 0.0012265922268852592,
+            "class_matching_anomaly_score": 0.019425928592681885
+        },
+        {
+            "snippet_index": 7,
+            "timestamp_sec": 3.73,
+            "binary_anomaly_score": 0.0010197267401963472,
+            "class_matching_anomaly_score": 0.019118666648864746
+        },
+        {
+            "snippet_index": 8,
+            "timestamp_sec": 4.27,
+            "binary_anomaly_score": 0.0008825768600217998,
+            "class_matching_anomaly_score": 0.018733620643615723
+        },
+        {
+            "snippet_index": 9,
+            "timestamp_sec": 4.8,
+            "binary_anomaly_score": 0.0007846775697544217,
+            "class_matching_anomaly_score": 0.018349170684814453
+        },
+        {
+            "snippet_index": 10,
+            "timestamp_sec": 5.33,
+            "binary_anomaly_score": 0.0007094884640537202,
+            "class_matching_anomaly_score": 0.017955660820007324
+        },
+        {
+            "snippet_index": 11,
+            "timestamp_sec": 5.87,
+            "binary_anomaly_score": 0.0006561782793141901,
+            "class_matching_anomaly_score": 0.01757335662841797
+        },
+        {
+            "snippet_index": 12,
+            "timestamp_sec": 6.4,
+            "binary_anomaly_score": 0.0006227354169823229,
+            "class_matching_anomaly_score": 0.017272531986236572
+        },
+        {
+            "snippet_index": 13,
+            "timestamp_sec": 6.93,
+            "binary_anomaly_score": 0.0005772155127488077,
+            "class_matching_anomaly_score": 0.01680845022201538
+        },
+        {
+            "snippet_index": 14,
+            "timestamp_sec": 7.47,
+            "binary_anomaly_score": 0.0005365550168789923,
+            "class_matching_anomaly_score": 0.016296565532684326
+        },
+        {
+            "snippet_index": 15,
+            "timestamp_sec": 8.0,
+            "binary_anomaly_score": 0.0004929361748509109,
+            "class_matching_anomaly_score": 0.015782475471496582
+        },
+        {
+            "snippet_index": 16,
+            "timestamp_sec": 8.53,
+            "binary_anomaly_score": 0.0004542334354482591,
+            "class_matching_anomaly_score": 0.015310168266296387
+        },
+        {
+            "snippet_index": 17,
+            "timestamp_sec": 9.07,
+            "binary_anomaly_score": 0.00042144631152041256,
+            "class_matching_anomaly_score": 0.014878392219543457
+        },
+        {
+            "snippet_index": 18,
+            "timestamp_sec": 9.6,
+            "binary_anomaly_score": 0.00039754516910761595,
+            "class_matching_anomaly_score": 0.01453930139541626
+        },
+        {
+            "snippet_index": 19,
+            "timestamp_sec": 10.13,
+            "binary_anomaly_score": 0.0003846690524369478,
+            "class_matching_anomaly_score": 0.014345228672027588
+        },
+        {
+            "snippet_index": 20,
+            "timestamp_sec": 10.67,
+            "binary_anomaly_score": 0.0003794670628849417,
+            "class_matching_anomaly_score": 0.014228343963623047
+        },
+        {
+            "snippet_index": 21,
+            "timestamp_sec": 11.2,
+            "binary_anomaly_score": 0.000381583726266399,
+            "class_matching_anomaly_score": 0.014166057109832764
+        },
+        {
+            "snippet_index": 22,
+            "timestamp_sec": 11.73,
+            "binary_anomaly_score": 0.00039041865966282785,
+            "class_matching_anomaly_score": 0.014151811599731445
+        },
+        {
+            "snippet_index": 23,
+            "timestamp_sec": 12.27,
+            "binary_anomaly_score": 0.0004068879352416843,
+            "class_matching_anomaly_score": 0.014206111431121826
+        },
+        {
+            "snippet_index": 24,
+            "timestamp_sec": 12.8,
+            "binary_anomaly_score": 0.00042118385317735374,
+            "class_matching_anomaly_score": 0.014277815818786621
+        },
+        {
+            "snippet_index": 25,
+            "timestamp_sec": 13.33,
+            "binary_anomaly_score": 0.0004396634758450091,
+            "class_matching_anomaly_score": 0.014454007148742676
+        },
+        {
+            "snippet_index": 26,
+            "timestamp_sec": 13.87,
+            "binary_anomaly_score": 0.0004539958026725799,
+            "class_matching_anomaly_score": 0.014592468738555908
+        },
+        {
+            "snippet_index": 27,
+            "timestamp_sec": 14.4,
+            "binary_anomaly_score": 0.00046138965990394354,
+            "class_matching_anomaly_score": 0.014614522457122803
+        },
+        {
+            "snippet_index": 28,
+            "timestamp_sec": 14.93,
+            "binary_anomaly_score": 0.0004672496288549155,
+            "class_matching_anomaly_score": 0.014608621597290039
+        },
+        {
+            "snippet_index": 29,
+            "timestamp_sec": 15.47,
+            "binary_anomaly_score": 0.00045604174374602735,
+            "class_matching_anomaly_score": 0.0143355131149292
+        },
+        {
+            "snippet_index": 30,
+            "timestamp_sec": 16.0,
+            "binary_anomaly_score": 0.00044157187221571803,
+            "class_matching_anomaly_score": 0.013971149921417236
+        },
+        {
+            "snippet_index": 31,
+            "timestamp_sec": 16.53,
+            "binary_anomaly_score": 0.000393210124457255,
+            "class_matching_anomaly_score": 0.013384878635406494
+        },
+        {
+            "snippet_index": 32,
+            "timestamp_sec": 17.07,
+            "binary_anomaly_score": 0.0003520379832480103,
+            "class_matching_anomaly_score": 0.012839913368225098
+        },
+        {
+            "snippet_index": 33,
+            "timestamp_sec": 17.6,
+            "binary_anomaly_score": 0.0003085971693508327,
+            "class_matching_anomaly_score": 0.012208044528961182
+        },
+        {
+            "snippet_index": 34,
+            "timestamp_sec": 18.13,
+            "binary_anomaly_score": 0.00028167746495455503,
+            "class_matching_anomaly_score": 0.01175069808959961
+        },
+        {
+            "snippet_index": 35,
+            "timestamp_sec": 18.67,
+            "binary_anomaly_score": 0.000264534552115947,
+            "class_matching_anomaly_score": 0.011374831199645996
+        },
+        {
+            "snippet_index": 36,
+            "timestamp_sec": 19.2,
+            "binary_anomaly_score": 0.00025276155793108046,
+            "class_matching_anomaly_score": 0.011074841022491455
+        },
+        {
+            "snippet_index": 37,
+            "timestamp_sec": 19.73,
+            "binary_anomaly_score": 0.00024666779791004956,
+            "class_matching_anomaly_score": 0.010849237442016602
+        },
+        {
+            "snippet_index": 38,
+            "timestamp_sec": 20.27,
+            "binary_anomaly_score": 0.00024500457220710814,
+            "class_matching_anomaly_score": 0.01066899299621582
+        },
+        {
+            "snippet_index": 39,
+            "timestamp_sec": 20.8,
+            "binary_anomaly_score": 0.00024400469555985183,
+            "class_matching_anomaly_score": 0.010490775108337402
+        },
+        {
+            "snippet_index": 40,
+            "timestamp_sec": 21.33,
+            "binary_anomaly_score": 0.0002443066332489252,
+            "class_matching_anomaly_score": 0.010334253311157227
+        },
+        {
+            "snippet_index": 41,
+            "timestamp_sec": 21.87,
+            "binary_anomaly_score": 0.00024062934971880168,
+            "class_matching_anomaly_score": 0.010199368000030518
+        },
+        {
+            "snippet_index": 42,
+            "timestamp_sec": 22.4,
+            "binary_anomaly_score": 0.00023149389016907662,
+            "class_matching_anomaly_score": 0.009974360466003418
+        },
+        {
+            "snippet_index": 43,
+            "timestamp_sec": 22.93,
+            "binary_anomaly_score": 0.00022023731435183436,
+            "class_matching_anomaly_score": 0.009754061698913574
+        },
+        {
+            "snippet_index": 44,
+            "timestamp_sec": 23.47,
+            "binary_anomaly_score": 0.0002083851577481255,
+            "class_matching_anomaly_score": 0.009479999542236328
+        },
+        {
+            "snippet_index": 45,
+            "timestamp_sec": 24.0,
+            "binary_anomaly_score": 0.00018702814122661948,
+            "class_matching_anomaly_score": 0.009182333946228027
+        },
+        {
+            "snippet_index": 46,
+            "timestamp_sec": 24.53,
+            "binary_anomaly_score": 0.00016007362864911556,
+            "class_matching_anomaly_score": 0.008841454982757568
+        },
+        {
+            "snippet_index": 47,
+            "timestamp_sec": 25.07,
+            "binary_anomaly_score": 0.00013370976375881582,
+            "class_matching_anomaly_score": 0.008533954620361328
+        },
+        {
+            "snippet_index": 48,
+            "timestamp_sec": 25.6,
+            "binary_anomaly_score": 0.00010860995826078579,
+            "class_matching_anomaly_score": 0.00823068618774414
+        },
+        {
+            "snippet_index": 49,
+            "timestamp_sec": 26.13,
+            "binary_anomaly_score": 9.140286420006305e-05,
+            "class_matching_anomaly_score": 0.008062958717346191
+        },
+        {
+            "snippet_index": 50,
+            "timestamp_sec": 26.67,
+            "binary_anomaly_score": 8.132296352414414e-05,
+            "class_matching_anomaly_score": 0.007942259311676025
+        },
+        {
+            "snippet_index": 51,
+            "timestamp_sec": 27.2,
+            "binary_anomaly_score": 7.264530722750351e-05,
+            "class_matching_anomaly_score": 0.007855772972106934
+        },
+        {
+            "snippet_index": 52,
+            "timestamp_sec": 27.73,
+            "binary_anomaly_score": 6.727952131768689e-05,
+            "class_matching_anomaly_score": 0.00775676965713501
+        },
+        {
+            "snippet_index": 53,
+            "timestamp_sec": 28.27,
+            "binary_anomaly_score": 6.291925092227757e-05,
+            "class_matching_anomaly_score": 0.0076315999031066895
+        },
+        {
+            "snippet_index": 54,
+            "timestamp_sec": 28.8,
+            "binary_anomaly_score": 6.097499863244593e-05,
+            "class_matching_anomaly_score": 0.0075528621673583984
+        },
+        {
+            "snippet_index": 55,
+            "timestamp_sec": 29.33,
+            "binary_anomaly_score": 6.038829087628983e-05,
+            "class_matching_anomaly_score": 0.007462561130523682
+        },
+        {
+            "snippet_index": 56,
+            "timestamp_sec": 29.87,
+            "binary_anomaly_score": 6.029409996699542e-05,
+            "class_matching_anomaly_score": 0.0073340535163879395
+        },
+        {
+            "snippet_index": 57,
+            "timestamp_sec": 30.4,
+            "binary_anomaly_score": 6.164431397337466e-05,
+            "class_matching_anomaly_score": 0.0072019100189208984
+        },
+        {
+            "snippet_index": 58,
+            "timestamp_sec": 30.93,
+            "binary_anomaly_score": 6.255239713937044e-05,
+            "class_matching_anomaly_score": 0.007026314735412598
+        },
+        {
+            "snippet_index": 59,
+            "timestamp_sec": 31.47,
+            "binary_anomaly_score": 6.542382470797747e-05,
+            "class_matching_anomaly_score": 0.00690770149230957
+        },
+        {
+            "snippet_index": 60,
+            "timestamp_sec": 32.0,
+            "binary_anomaly_score": 6.902428140165284e-05,
+            "class_matching_anomaly_score": 0.0067803263664245605
+        },
+        {
+            "snippet_index": 61,
+            "timestamp_sec": 32.53,
+            "binary_anomaly_score": 7.390006066998467e-05,
+            "class_matching_anomaly_score": 0.00667119026184082
+        },
+        {
+            "snippet_index": 62,
+            "timestamp_sec": 33.07,
+            "binary_anomaly_score": 8.257326408056542e-05,
+            "class_matching_anomaly_score": 0.006585836410522461
+        },
+        {
+            "snippet_index": 63,
+            "timestamp_sec": 33.6,
+            "binary_anomaly_score": 9.551687253406271e-05,
+            "class_matching_anomaly_score": 0.006520986557006836
+        },
+        {
+            "snippet_index": 64,
+            "timestamp_sec": 34.13,
+            "binary_anomaly_score": 0.00011618792632361874,
+            "class_matching_anomaly_score": 0.006481468677520752
+        },
+        {
+            "snippet_index": 65,
+            "timestamp_sec": 34.67,
+            "binary_anomaly_score": 0.00015018785779830068,
+            "class_matching_anomaly_score": 0.006539702415466309
+        },
+        {
+            "snippet_index": 66,
+            "timestamp_sec": 35.2,
+            "binary_anomaly_score": 0.00020776774908881634,
+            "class_matching_anomaly_score": 0.006634771823883057
+        },
+        {
+            "snippet_index": 67,
+            "timestamp_sec": 35.73,
+            "binary_anomaly_score": 0.00031286655575968325,
+            "class_matching_anomaly_score": 0.006839871406555176
+        },
+        {
+            "snippet_index": 68,
+            "timestamp_sec": 36.27,
+            "binary_anomaly_score": 0.0005210479139350355,
+            "class_matching_anomaly_score": 0.0071721673011779785
+        },
+        {
+            "snippet_index": 69,
+            "timestamp_sec": 36.8,
+            "binary_anomaly_score": 0.000989484484307468,
+            "class_matching_anomaly_score": 0.007886409759521484
+        },
+        {
+            "snippet_index": 70,
+            "timestamp_sec": 37.33,
+            "binary_anomaly_score": 0.0024033035151660442,
+            "class_matching_anomaly_score": 0.009369432926177979
+        },
+        {
+            "snippet_index": 71,
+            "timestamp_sec": 37.87,
+            "binary_anomaly_score": 0.006895679514855146,
+            "class_matching_anomaly_score": 0.011637389659881592
+        },
+        {
+            "snippet_index": 72,
+            "timestamp_sec": 38.4,
+            "binary_anomaly_score": 0.021154215559363365,
+            "class_matching_anomaly_score": 0.01601046323776245
+        }
+    ]
+}
