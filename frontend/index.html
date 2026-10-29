@@ -133,11 +133,11 @@
         <!-- VAD -->
         <div class="feature-card active" id="tab-vad">
           <h3>Stage 1 — Video Anomaly Detection</h3>
-          <p>A lightweight CLIP-TSA model watches every camera stream continuously. It's cheap enough to run 24/7 on all feeds, and its only job is to filter out the ~90% of footage where nothing's happening.</p>
+          <p>A lightweight VadCLIP model watches every camera stream continuously. It's cheap enough to run 24/7 on all feeds, and its only job is to filter out the ~90% of footage where nothing's happening.</p>
           <div class="feature-detail">
             <div class="detail-icon" style="background: #DBEAFE; color: #2563EB;">⚡</div>
             <div>
-              <strong>Model:</strong> CLIP-TSA (pretrained on UCF-Crime)
+              <strong>Model:</strong> VadCLIP (pretrained on UCF-Crime)
               <br><span style="color: var(--color-text-tertiary); font-size: 13px;">Anomaly score 0–1 per rolling clip window</span>
             </div>
           </div>
@@ -337,7 +337,7 @@
           </div>
           <div class="pipeline-step-content">
             <h4>VAD — Always-On Filter</h4>
-            <p>CLIP-TSA scores every clip for anomaly likelihood (0–1). Runs continuously, cheaply filters ~90% of normal footage.</p>
+            <p>VadCLIP scores every clip for anomaly likelihood (0–1). Runs continuously, cheaply filters ~90% of normal footage.</p>
           </div>
         </div>
 
@@ -451,6 +451,11 @@
 
       <!-- Start Analysis Button -->
       <div class="start-analysis-wrapper" id="start-analysis-wrapper">
+        <label for="camera-id-input" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 14px; color: var(--color-text-secondary);">
+          Camera ID
+          <input type="text" id="camera-id-input" value="CAM-01" maxlength="32" pattern="[A-Za-z0-9_-]+" title="Letters, digits, - and _ only. Use a different ID per camera to test cross-camera matching." style="padding: 6px 10px; border: 1px solid #D1D5DB; border-radius: 8px; font: inherit; width: 120px;">
+        </label>
+        <br>
         <button class="btn btn-accent btn-lg" id="start-analysis-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Start Pipeline Analysis
@@ -467,7 +472,7 @@
             <div class="stage-number" style="background: linear-gradient(135deg, #3B82F6, #2563EB);">1</div>
             <div class="stage-title-area">
               <h4>Video Anomaly Detection</h4>
-              <div class="stage-model">CLIP-TSA • Rolling clip window</div>
+              <div class="stage-model">VadCLIP • 16-frame snippets</div>
             </div>
             <div class="stage-status pending" id="stage-1-status">
               <div class="status-dot"></div>
@@ -485,7 +490,7 @@
             <div class="stage-number" style="background: linear-gradient(135deg, #E67E22, #D35400);">2</div>
             <div class="stage-title-area">
               <h4>Gemma Semantic Confirmation</h4>
-              <div class="stage-model">Gemma • On-device • Frame collage</div>
+              <div class="stage-model">Gemma • Kaggle VM via ngrok • 3×3 frame grid</div>
             </div>
             <div class="stage-status pending" id="stage-2-status">
               <div class="status-dot"></div>
@@ -600,49 +605,17 @@
           <div class="comparison-panel vad-only">
             <h4>❌ VAD-Only (Traditional)</h4>
             <p style="font-size: 14px; color: #991B1B; margin-bottom: 12px;">All flagged clips trigger alerts — high false-positive rate</p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
-                <span>🔴 Alert: Movement detected</span>
-                <span style="color: var(--color-danger);">Score: 0.83</span>
-              </div>
-              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
-                <span>🔴 Alert: Movement detected</span>
-                <span style="color: var(--color-danger);">Score: 0.65</span>
-              </div>
-              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
-                <span>🔴 Alert: Activity detected</span>
-                <span style="color: var(--color-warning);">Score: 0.52</span>
-              </div>
-              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
-                <span>🔴 Alert: Object detected</span>
-                <span style="color: var(--color-warning);">Score: 0.47</span>
-              </div>
-            </div>
-            <p style="font-size: 12px; color: #991B1B; margin-top: 12px; font-weight: 600;">4 alerts fired — operator overloaded</p>
+            <!-- Filled from this run's VAD events by showComparison() in app.js -->
+            <div id="comparison-vad-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <p id="comparison-vad-summary" style="font-size: 12px; color: #991B1B; margin-top: 12px; font-weight: 600;"></p>
           </div>
 
           <div class="comparison-panel full-pipeline">
             <h4>✅ CrowdGuard (Full Pipeline)</h4>
             <p style="font-size: 14px; color: #065F46; margin-bottom: 12px;">Gemma filters false positives — only real anomalies reach operator</p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between;">
-                <span>🟢 Confirmed: Suspicious behavior</span>
-                <span style="color: var(--color-success);">Severity: 0.76</span>
-              </div>
-              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; opacity: 0.4;">
-                <span>⚪ Rejected by Gemma: Normal activity</span>
-                <span style="color: var(--color-text-tertiary);">Filtered</span>
-              </div>
-              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; opacity: 0.4;">
-                <span>⚪ Below VAD threshold</span>
-                <span style="color: var(--color-text-tertiary);">Discarded</span>
-              </div>
-              <div style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; opacity: 0.4;">
-                <span>⚪ Below VAD threshold</span>
-                <span style="color: var(--color-text-tertiary);">Discarded</span>
-              </div>
-            </div>
-            <p style="font-size: 12px; color: #065F46; margin-top: 12px; font-weight: 600;">1 alert fired — 75% alarm reduction ✓</p>
+            <!-- Filled from this run's Gemma verdicts by showComparison() in app.js -->
+            <div id="comparison-full-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <p id="comparison-full-summary" style="font-size: 12px; color: #065F46; margin-top: 12px; font-weight: 600;"></p>
           </div>
         </div>
       </div>
@@ -709,7 +682,7 @@
 
       <div class="tech-grid">
         <div class="tech-badge">🧠 Gemma (On-Device)</div>
-        <div class="tech-badge">📊 CLIP-TSA (VAD)</div>
+        <div class="tech-badge">📊 VadCLIP (VAD)</div>
         <div class="tech-badge">🎯 YOLOv8n (Detection)</div>
         <div class="tech-badge">🔍 OSNet (Re-ID)</div>
         <div class="tech-badge">🐍 Python + PyTorch</div>
