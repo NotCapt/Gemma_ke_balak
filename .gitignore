@@ -21,3 +21,9 @@ temp_features.npy
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Server runtime output (per-session collages/grids, uploads, forensic log)
+VadCLIP/uploads/
+VadCLIP/runs/
+logs/
+yolov8n.pt

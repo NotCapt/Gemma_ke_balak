@@ -1,4 +1,7 @@
 import io
+import os
+import re
+import json
 import cv2
 import requests
 from PIL import Image
@@ -7,10 +10,16 @@ import numpy as np
 # =====================================================================
 # ⚙️ LOCAL CLIENT CONFIGURATION
 # =====================================================================
-KAGGLE_NGROK_URL = "https://67e9-34-134-45-216.ngrok-free.app"
+# ngrok free-tier URLs change on every tunnel restart, so read it from the
+# environment instead of editing code: set GEMMA_SERVER_URL=https://xxxx.ngrok-free.app
+KAGGLE_NGROK_URL = os.environ.get("GEMMA_SERVER_URL", "").rstrip("/")
 
-# Use the video we have been working with
-VIDEO_PATH = r"C:\Users\govin\Downloads\t2\WhatsApp Video 2026-07-15 at 12.12.55 PM.mp4"
+# Seconds to wait for the remote VLM before giving up (cold starts can be slow).
+GEMMA_TIMEOUT_SEC = float(os.environ.get("GEMMA_TIMEOUT_SEC", "120"))
+
+# Demo clip shipped in the repo; override with: python test_kaggle_vm.py path/to/video.mp4
+VIDEO_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          "VadCLIP", "WhatsApp Video 2026-07-15 at 12.12.55 PM.mp4")
 
 def get_dynamic_prompt(vad_verdict: str) -> str:
     return (
@@ -45,7 +54,10 @@ def create_3x3_frame_grid(video_path: str, start_sec: float=None, end_sec: float
         
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
+    if fps <= 0 or total_frames <= 0:
+        cap.release()
+        raise RuntimeError(f"Video reports no frames/FPS (unsupported codec?): {video_path}")
+
     if start_sec is None or end_sec is None:
         start_frame = 0
         end_frame = total_frames - 1
@@ -105,9 +117,13 @@ def create_3x3_frame_grid(video_path: str, start_sec: float=None, end_sec: float
 # =====================================================================
 # 🧠 GEMMA INFERENCE EXECUTOR
 # =====================================================================
-def run_gemma_inference(grid_image: Image.Image, prompt: str, server_url: str) -> str:
+def run_gemma_inference(grid_image: Image.Image, prompt: str, server_url: str,
+                        timeout: float = GEMMA_TIMEOUT_SEC) -> str:
     """Sends the processed frame matrix to the remote Gemma-4 multimodal engine."""
-    endpoint = f"{server_url}/api/inference"
+    if not server_url:
+        raise RuntimeError("Gemma server URL not configured — set the GEMMA_SERVER_URL "
+                           "environment variable to your Kaggle VM's ngrok URL.")
+    endpoint = f"{server_url.rstrip('/')}/api/inference"
     print(f"[Dispatching] visual payload to remote Gemma VLM endpoint: {endpoint}")
     
     img_byte_arr = io.BytesIO()
@@ -120,8 +136,9 @@ def run_gemma_inference(grid_image: Image.Image, prompt: str, server_url: str) -
     # Required header to bypass ngrok free tier browser warning screen
     headers = {"ngrok-skip-browser-warning": "true"}
     
-    response = requests.post(endpoint, files=files, data=data, headers=headers)
-    
+    # Without a timeout a dead tunnel hangs the request (and the dashboard) forever.
+    response = requests.post(endpoint, files=files, data=data, headers=headers, timeout=timeout)
+
     if response.status_code == 200:
         result = response.json()
         if result.get("status") == "success":
@@ -129,7 +146,55 @@ def run_gemma_inference(grid_image: Image.Image, prompt: str, server_url: str) -
         else:
             raise Exception(f"Remote Gemma Application Exception: {result.get('message', result)}")
     else:
-        raise Exception(f"HTTP Connection Failure ({response.status_code}): {response.text}")
+        raise Exception(f"HTTP Connection Failure ({response.status_code}): {response.text[:500]}")
+
+
+# =====================================================================
+# 🧾 RESPONSE PARSING
+# =====================================================================
+def _as_bool(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in ("true", "yes", "1")
+    return bool(value)
+
+
+def parse_gemma_json(analysis):
+    """Turn Gemma's raw reply into a normalized dict, or None if no JSON object is found.
+
+    The VLM is told to emit bare JSON but often wraps it in ```json fences or adds a
+    sentence before/after it, and sometimes returns booleans/numbers as strings.
+    """
+    if isinstance(analysis, dict):
+        result = dict(analysis)
+    else:
+        text = str(analysis or "").strip()
+        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE).strip()
+        result = None
+        try:
+            result = json.loads(text)
+        except json.JSONDecodeError:
+            # Fall back to the outermost {...} span in the text.
+            start, end = text.find("{"), text.rfind("}")
+            if start != -1 and end > start:
+                try:
+                    result = json.loads(text[start:end + 1])
+                except json.JSONDecodeError:
+                    result = None
+        if not isinstance(result, dict):
+            return None
+
+    result["confirmed_anomaly"] = _as_bool(result.get("confirmed_anomaly", False))
+    result["person_involved"] = _as_bool(result.get("person_involved", False))
+    try:
+        result["confidence"] = min(max(float(result.get("confidence", 0.0)), 0.0), 1.0)
+    except (TypeError, ValueError):
+        result["confidence"] = 0.0
+    if not isinstance(result.get("objects_detected"), list):
+        result["objects_detected"] = []
+    return result
+
 
 # =====================================================================
 # MAIN EXECUTION ROUTINE
@@ -140,7 +205,9 @@ if __name__ == "__main__":
     print("=" * 60)
     print("SECURITY CCTV ANALYSIS PIPELINE")
     print("=" * 60)
-    
+    if len(sys.argv) > 1:
+        VIDEO_PATH = sys.argv[1]
+
     try:
         # Step 1: Prepare the video grid locally
         # Testing with an anomaly interval detected by VAD (e.g. 0.0s to 5.0s buffer)

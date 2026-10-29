@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import argparse
+import functools
 import cv2
 import numpy as np
 import torch
@@ -16,20 +17,19 @@ import ucf_option
 from utils.tools import get_batch_mask, get_prompt_text, process_split
 import extract_features
 
-def run_anomaly_detection(video_path, model_path, feat_path, device):
-    """Load the model and perform custom inference on the extracted features."""
-    args = ucf_option.parser.parse_args([])
-    
-    label_map = dict({
-        'Normal': 'Normal', 'Abuse': 'Abuse', 'Arrest': 'Arrest', 'Arson': 'Arson', 
-        'Assault': 'Assault', 'Burglary': 'Burglary', 'Explosion': 'Explosion', 
-        'Fighting': 'Fighting', 'RoadAccidents': 'RoadAccidents', 'Robbery': 'Robbery', 
-        'Shooting': 'Shooting', 'Shoplifting': 'Shoplifting', 'Stealing': 'Stealing', 
-        'Vandalism': 'Vandalism'
-    })
-    prompt_text = get_prompt_text(label_map)
+LABEL_MAP = dict({
+    'Normal': 'Normal', 'Abuse': 'Abuse', 'Arrest': 'Arrest', 'Arson': 'Arson',
+    'Assault': 'Assault', 'Burglary': 'Burglary', 'Explosion': 'Explosion',
+    'Fighting': 'Fighting', 'RoadAccidents': 'RoadAccidents', 'Robbery': 'Robbery',
+    'Shooting': 'Shooting', 'Shoplifting': 'Shoplifting', 'Stealing': 'Stealing',
+    'Vandalism': 'Vandalism'
+})
 
-    # Initialize model
+
+@functools.lru_cache(maxsize=2)
+def load_vad_model(model_path, device):
+    """Build CLIPVAD and load weights once per (path, device); reused across requests."""
+    args = ucf_option.parser.parse_args([])
     model = CLIPVAD(
         args.classes_num, 
         args.embed_dim, 
@@ -48,9 +48,19 @@ def run_anomaly_detection(video_path, model_path, feat_path, device):
     model.load_state_dict(model_param)
     model.to(device)
     model.eval()
+    return model
 
-    print(f"[INFO] Loading features from: {feat_path}")
-    features = np.load(feat_path)
+
+def run_anomaly_detection(video_path, model_path, feat_path, device, features=None):
+    """Run VadCLIP inference on extracted features (pass `features` to skip the .npy round-trip)."""
+    args = ucf_option.parser.parse_args([])
+    label_map = LABEL_MAP
+    prompt_text = get_prompt_text(label_map)
+    model = load_vad_model(model_path, device)
+
+    if features is None:
+        print(f"[INFO] Loading features from: {feat_path}")
+        features = np.load(feat_path)
 
     # Process features for the model
     visual, length = process_split(features, args.visual_length)
@@ -132,8 +142,11 @@ def group_anomalous_snippets(prob1, probs_classes, class_names, threshold=0.010,
 
     return event_list
 
-def create_collages(video_path, events, fps, reports_dir):
-    """Extract frames for each event at exactly 2 fps (up to 8 frames) to fit a single 4x2 collage."""
+def create_collages(video_path, events, fps, reports_dir, prefix=""):
+    """Extract frames for each event at exactly 2 fps (up to 8 frames) to fit a single 4x2 collage.
+
+    `prefix` keeps collages from different runs/sessions from overwriting each other.
+    """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"[ERROR] Could not open video file: {video_path}")
@@ -219,7 +232,7 @@ def create_collages(video_path, events, fps, reports_dir):
             draw.rectangle([(x + 5, y + 5), (x + 70, y + 25)], fill=(0, 0, 0, 180))
             draw.text((x + 10, y + 8), time_str, fill=(255, 255, 255), font=font)
 
-        collage_filename = f"anomaly_event_{idx+1}_collage.jpg"
+        collage_filename = f"{prefix}anomaly_event_{idx+1}_collage.jpg"
         collage_filepath = os.path.join(reports_dir, collage_filename)
         collage_img.save(collage_filepath, "JPEG")
         collage_paths.append(collage_filepath)
@@ -230,33 +243,41 @@ def create_collages(video_path, events, fps, reports_dir):
     return collage_paths
 
 def get_local_fallback(event):
-    """Fallback logic to simulate Gemma outputs when offline or API limit hit."""
+    """Fallback when Gemma is offline or rate-limited: a VAD-score-only decision.
+
+    Gemma never saw the frames on this path, so no visual findings are claimed
+    and the result is explicitly marked as a fallback.
+    """
     event_type = event["predicted_class"]
     max_score = event["max_score"]
-    
+
     confirmed = True if max_score > 0.015 else False
-    
+
     reasoning = (
-        f"[Local Fallback Mode] Automated rule check confirmed anomaly score of {max_score:.4f} "
-        f"for event classified as '{event_type}'. "
-        f"Visual pattern matching signals possible tampering or loitering near vehicle."
+        f"[Local Fallback Mode] Gemma unavailable; no visual verification performed. "
+        f"Decision based only on VAD score {max_score:.4f} (fallback cutoff 0.015) "
+        f"for event classified as '{event_type}'."
     )
-    
+
     return {
         "confirmed_anomaly": confirmed,
-        "person_involved": True,
+        "person_involved": None,
         "anomaly_type": event_type.lower(),
         "frames_with_contact": [],
-        "duration_at_vehicle_sec": round(event["end_time_sec"] - event["start_time_sec"], 2),
-        "objects_detected": ["vehicle", "person"],
+        "duration_at_vehicle_sec": None,
+        "objects_detected": [],
         "reasoning": reasoning,
-        "confidence": round(max_score * 10, 2) if max_score * 10 <= 1.0 else 0.95
+        "confidence": 0.0,
+        "fallback": True,
     }
 
 def run_gemma_reasoning(collage_path, event):
     """Run Gemma reasoning via the Gemini API on the collage image, with a local fallback mode."""
     api_key = os.environ.get("GEMINI_API_KEY", "")
-    
+    if not api_key:
+        print("[WARNING] GEMINI_API_KEY not set. Falling back to local mode.")
+        return get_local_fallback(event)
+
     system_instruction = (
         "You are analyzing a sequence of timestamped CCTV frames (a single image grid, frames in time order). Your job is to detect suspicious activity involving vehicles, not just note that a person is present.\n\n"
         "STEP 1 — Track the person across ALL frames.\n"
@@ -316,7 +337,7 @@ def run_gemma_reasoning(collage_path, event):
             )
         )
         result = json.loads(response.text)
-        print(f"[SUCCESS] Gemma reasoning completed: {result.get('reasoning')[:100]}...")
+        print(f"[SUCCESS] Gemma reasoning completed: {str(result.get('reasoning', ''))[:100]}...")
         return result
     except Exception as e:
         print(f"[WARNING] Gemma API failed ({e}). Falling back to local mode.")
@@ -327,6 +348,8 @@ def main():
     parser.add_argument("--video", required=True, help="Path to input video clip")
     parser.add_argument("--threshold", type=float, default=0.010, help="Anomaly score threshold (default: 0.010)")
     parser.add_argument("--model", default="model/model_ucf.pth", help="Path to model weights")
+    parser.add_argument("--crop", choices=extract_features.CROP_MODES, default="official",
+                        help="Feature-extraction crop mode (see extract_features.py)")
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -343,8 +366,11 @@ def main():
     
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration = total_frames / fps
     cap.release()
+    if fps <= 0:
+        print(f"[ERROR] Could not read FPS from video file: {args.video}")
+        return
+    duration = total_frames / fps
 
     print(f"\n--- VIDEO INFO ---")
     print(f"Path: {args.video}")
@@ -352,24 +378,18 @@ def main():
     print(f"Total Frames: {total_frames}")
     print(f"Duration: {duration:.2f} seconds")
 
-    # 3. Extract features (runs extract_features.py)
-    temp_feat_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_features.npy")
+    # 3. Extract features
     print(f"\n--- STEP 1: FEATURE EXTRACTION ---")
-    
-    sys.argv = [
-        "extract_features.py",
-        "--video", args.video,
-        "--out", temp_feat_path
-    ]
-    extract_features.main()
+    features = extract_features.extract_video_features(args.video, device=device, crop=args.crop)
 
     # 4. Anomaly detection inference
     print(f"\n--- STEP 2: ANOMALY DETECTION INFERENCE ---")
     prob1, prob2, probs_classes, class_names = run_anomaly_detection(
-        args.video, 
-        args.model, 
-        temp_feat_path, 
-        device
+        args.video,
+        args.model,
+        None,
+        device,
+        features=features,
     )
 
     # 5. Group anomalous snippets
@@ -462,10 +482,6 @@ def main():
     print(f"\n[SUCCESS] Pipeline completed successfully!")
     print(f"[SUCCESS] JSON Report saved to: {report_filepath}")
     print(f"[SUCCESS] Generated {len(collage_paths)} anomaly collages in {reports_dir}")
-
-    # Remove temporary feature file
-    if os.path.exists(temp_feat_path):
-        os.remove(temp_feat_path)
 
 if __name__ == "__main__":
     main()

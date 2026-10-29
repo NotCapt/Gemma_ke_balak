@@ -10,14 +10,17 @@ def main():
     project_root = os.path.abspath(os.path.join(current_dir, ".."))
     
     server_script = os.path.join(project_root, "server.py")
-    venv_python = os.path.join(project_root, "venv", "Scripts", "python.exe")
-    
-    # Check if venv exists
+    if os.name == "nt":
+        venv_python = os.path.join(project_root, "venv", "Scripts", "python.exe")
+    else:
+        venv_python = os.path.join(project_root, "venv", "bin", "python")
+
+    # Prefer the project venv, otherwise use whichever interpreter launched us
+    # (conda env, system Python, an already-activated venv...).
     if not os.path.exists(venv_python):
-        print("⚠️ Virtual environment not found at", venv_python)
-        print("Please ensure the venv is created and dependencies are installed.")
-        sys.exit(1)
-        
+        print(f"[SYSTEM] No venv at {venv_python}; using current interpreter {sys.executable}")
+        venv_python = sys.executable
+
     print("=" * 70)
     print("[SEMANTIC ANOMALY DETECTION & CROSS-CAMERA FORENSIC SYSTEM]")
     print("=" * 70)
@@ -27,7 +30,7 @@ def main():
     # Open browser slightly after starting
     def open_browser():
         time.sleep(2)
-        webbrowser.open("http://localhost:8080")
+        webbrowser.open(f"http://localhost:{os.environ.get('PORT', '8080')}")
         
     threading.Thread(target=open_browser, daemon=True).start()
     
