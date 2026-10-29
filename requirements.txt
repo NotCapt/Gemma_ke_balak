@@ -1,0 +1,20 @@
+# Core server + Stage 1 (VadCLIP) + Stage 2 client (Gemma via Kaggle VM)
+flask>=3.0
+flask-cors>=4.0
+numpy
+opencv-python
+pillow
+requests
+torch
+torchvision
+ftfy          # CLIP tokenizer (VadCLIP/src/clip)
+regex         # CLIP tokenizer
+pandas        # VadCLIP training/eval datasets
+tqdm          # CLIP weight download progress
+
+# Stages 3-5 (optional — the dashboard marks them unavailable without these)
+ultralytics   # YOLOv8n
+torchreid     # OSNet; if pip fails, install from https://github.com/KaiyangZhou/deep-person-reid
+
+# Optional: CLI pipeline (VadCLIP/pipeline.py) Gemma path via the Gemini API
+# google-genai

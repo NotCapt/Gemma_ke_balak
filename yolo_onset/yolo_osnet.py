@@ -10,16 +10,30 @@ Setup (run once):
     # if torchreid install fails on your OS, see the fallback note at the
     # bottom of this file.
 
+Re-ID weights:
+    torchreid's `pretrained=True` only loads ImageNet classification weights,
+    which are NOT trained for person re-identification. Download a Re-ID
+    checkpoint from the torchreid model zoo (e.g. osnet_x1_0 trained on
+    MSMT17 or Market-1501) and pass it with --reid_weights or the
+    OSNET_WEIGHTS environment variable. Without it, cross-camera similarity
+    scores are not meaningful.
+
 Usage:
-    python test_yolo_osnet.py --image path/to/test.jpg
-    python test_yolo_osnet.py --video path/to/test.mp4 --frame 30
+    python yolo_osnet.py --image path/to/test.jpg
+    python yolo_osnet.py --video path/to/test.mp4 --frame 30 --reid_weights osnet_x1_0_msmt17.pth
 """
 
 import argparse
+import os
 import cv2
 import numpy as np
 import torch
-from ultralytics import YOLO
+
+
+def load_yolo(weights="yolov8n.pt"):
+    """Stage 3 model. Imported lazily so this module loads without ultralytics."""
+    from ultralytics import YOLO
+    return YOLO(weights)  # auto-downloads weights on first run
 
 
 def get_frame(args):
@@ -39,13 +53,16 @@ def get_frame(args):
     return frame
 
 
-def detect_people(frame, yolo_model, conf_thresh=0.4):
+def detect_people(frame, yolo_model, conf_thresh=0.4, imgsz=640):
     """
     Stage 3: YOLOv8n person detection.
     Input:  a single BGR frame (numpy array, as read by cv2).
     Output: list of boxes [x1, y1, x2, y2, confidence].
+
+    imgsz=1280 finds the small, distant people typical of CCTV far better than
+    the default 640 (at ~4x the compute).
     """
-    results = yolo_model(frame, verbose=False)[0]
+    results = yolo_model(frame, imgsz=imgsz, verbose=False)[0]
     boxes = []
     for box in results.boxes:
         cls_id = int(box.cls[0])
@@ -58,18 +75,25 @@ def detect_people(frame, yolo_model, conf_thresh=0.4):
 
 def crop_boxes(frame, boxes):
     """Crop each detected person out of the frame."""
+    h, w = frame.shape[:2]
     crops = []
     for x1, y1, x2, y2, conf in boxes:
+        # Clamp: a negative index would silently wrap around to the far edge.
+        x1, x2 = max(0, x1), min(w, x2)
+        y1, y2 = max(0, y1), min(h, y2)
         crop = frame[y1:y2, x1:x2]
         if crop.size > 0:
             crops.append(crop)
     return crops
 
 
-def load_osnet():
+def load_osnet(weights_path=None, device="cpu"):
     """
     Stage 4: load OSNet from torchreid's model zoo.
     Falls back to printing install instructions if torchreid isn't available.
+
+    Returns (model, weights_label). weights_label is "imagenet" when no Re-ID
+    checkpoint was supplied, so callers can flag the embeddings as untrusted.
     """
     try:
         import torchreid
@@ -79,35 +103,48 @@ def load_osnet():
             "If that fails, see the fallback note at the bottom of this script."
         )
 
+    weights_path = weights_path or os.environ.get("OSNET_WEIGHTS")
     model = torchreid.models.build_model(
         name="osnet_x1_0",
         num_classes=1000,  # unused at inference time, just needed to build the model
-        pretrained=True,
+        pretrained=True,   # ImageNet init only — Re-ID weights are loaded below
     )
+    if weights_path:
+        torchreid.utils.load_pretrained_weights(model, weights_path)
+        weights_label = os.path.basename(weights_path)
+    else:
+        print("[WARNING] No OSNet Re-ID weights given (--reid_weights / OSNET_WEIGHTS); "
+              "using ImageNet weights — similarity scores will not be reliable.")
+        weights_label = "imagenet"
+    model.to(device)
     model.eval()
-    return model
+    return model, weights_label
 
 
 def embed_crop(crop_bgr, model):
     """
     Stage 4: turn one cropped person image into a 512-dim embedding.
     Input:  cropped BGR image (numpy array).
-    Output: 1D numpy array, 512 floats.
+    Output: 1D numpy array, 512 floats, L2-normalized.
     """
     img = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, (128, 256))  # OSNet expects (width=128, height=256)
     img = img.astype(np.float32) / 255.0
     img = (img - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
-    tensor = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0).float()
+    device = next(model.parameters()).device
+    tensor = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0).float().to(device)
 
     with torch.no_grad():
         embedding = model(tensor)
 
-    return embedding.squeeze().numpy()  # shape: (512,)
+    embedding = embedding.squeeze().cpu().numpy()  # shape: (512,)
+    norm = np.linalg.norm(embedding)
+    return embedding / norm if norm > 0 else embedding
 
 
 def cosine_similarity(a, b):
-    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+    denom = np.linalg.norm(a) * np.linalg.norm(b)
+    return float(np.dot(a, b) / denom) if denom > 0 else 0.0
 
 
 def main():
@@ -115,16 +152,19 @@ def main():
     parser.add_argument("--image", type=str, help="path to a test image")
     parser.add_argument("--video", type=str, help="path to a test video")
     parser.add_argument("--frame", type=int, default=0, help="frame number if using --video")
+    parser.add_argument("--reid_weights", type=str, default=None,
+                        help="OSNet Re-ID checkpoint (.pth); defaults to $OSNET_WEIGHTS")
     args = parser.parse_args()
 
     if not args.image and not args.video:
         raise ValueError("Pass either --image or --video")
 
     print("Loading YOLOv8n...")
-    yolo_model = YOLO("yolov8n.pt")  # auto-downloads weights on first run
+    yolo_model = load_yolo()
 
     print("Loading OSNet...")
-    osnet_model = load_osnet()
+    osnet_model, weights_label = load_osnet(args.reid_weights)
+    print(f"OSNet weights: {weights_label}")
 
     frame = get_frame(args)
     print(f"Frame shape: {frame.shape}")
